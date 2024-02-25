@@ -1,13 +1,13 @@
 import os.path
-from fin_database.steps.step import Step
-from fin_database.steps.step import StepException
+# from fin_database.steps.step import Step
+# from fin_database.steps.step import StepException
 from fin_database.settings import db_dir, db_name
 import sqlite3
 
-class PreFlight(Step):
+class PreCheck():
 
-    def daily_process(self, input_, utils):
-        date_list = utils.calculate_date_period(input_['date_start'], input_['date_end'])
+    def daily_check(self, date_start, date_end, utils):
+        date_list = utils.calculate_date_period(date_start, date_end)
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
         conn = sqlite3.connect(db_path)
@@ -32,7 +32,8 @@ class PreFlight(Step):
             'conn': conn,
             'c': c,
         }
-        return output, utils
+        return output
+
 
     def month_process(self, input_, utils):
         print("")
