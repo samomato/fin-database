@@ -6,6 +6,7 @@ from fin_database.steps.step import Step
 class Parser(Step):
 
     def daily_process(self, input_, utils):
+        print(f'Processing the daily price of {input_["date"]} to DB')
         lines = input_['data'].text.split('\n')
         stock_lines = []
         for l in lines:

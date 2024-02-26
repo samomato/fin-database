@@ -21,7 +21,9 @@ class PreCheck():
             cursor = c.execute(f"SELECT * FROM DAILY WHERE 日期='{date}';")
             if cursor.fetchone() is None:
                 new_date_list.append(date)
-        print(new_date_list)
+            else:
+                print(date, 'already exist in DB')
+
         if not new_date_list:
             keep_run = False
         else:
