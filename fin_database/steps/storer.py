@@ -19,7 +19,19 @@ class Storer(Step):
         return input_
 
     def month_process(self, input_, utils):
-        pass
+        cn_list = ['月份']
+        [cn_list.append(_) for _ in input_['data'].columns]
+        input_['c'].execute('PRAGMA TABLE_INFO(MONTH_REVENUE)')
+        columns_of_tables = [tup[1] for tup in input_['c'].fetchall()]
+        if cn_list != columns_of_tables:
+            for cn in cn_list:
+                if cn not in columns_of_tables:
+                    input_['c'].execute(f"ALTER TABLE 'MONTH_REVENUE' ADD COLUMN '{cn}'")
+                    print(f'Add new column {cn} to DB from {input_["month"]}')
+            input_['conn'].commit()
+        input_['data'].to_sql('MONTH_REVENUE', input_['conn'], if_exists='append')
+
+        return input_
 
     def f_report_process(self):
         pass

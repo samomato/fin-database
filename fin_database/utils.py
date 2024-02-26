@@ -20,11 +20,11 @@ class Utils:
         delta = timedelta(days=1)
         today = date.today()
 
-        month_list = [date_start.strftime('%Y%m')]
+        month_list = [date_start.strftime('%Y-%m')]
         for i in range(int(period)):
-            old_month = date_start.strftime('%Y%m')
+            old_month = date_start.strftime('%Y-%m')
             date_start = date_start + delta
-            new_month = date_start.strftime('%Y%m')
+            new_month = date_start.strftime('%Y-%m')
             if new_month != old_month:
                 month_list.append(new_month)
         # Can't download when before 10th of the newest month:

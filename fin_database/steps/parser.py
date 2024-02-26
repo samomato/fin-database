@@ -32,7 +32,30 @@ class Parser(Step):
         return input_
 
     def month_process(self, input_, utils):
-        pass
+        print(f'Processing the month revenue of {input_["month"]} to DB')
+        dfs = pd.read_html(StringIO(input_['data'].text))
+        new_df = []
+
+        for i in range(input_['start_num'], len(dfs), 2):
+            new_df.append(dfs[i])
+
+        df = pd.concat(new_df)
+        new_label = []
+
+        for i in range(len(df.columns)):
+            new_label.append(df.columns[i][1].replace(' ',''))
+
+        df.columns = new_label
+        if input_['roc_year'] < 102:
+            df = df.loc[~(df['公司代號'] == '合計')]
+        else:
+            df = df.loc[~(df['公司代號'] == '合計')].drop('備註', axis=1)
+
+        df.insert(0, '月份', input_['month'])
+        df = df.set_index(['月份'])
+        input_['data'] = df
+        return input_
+
 
     def f_report_process(self):
         pass

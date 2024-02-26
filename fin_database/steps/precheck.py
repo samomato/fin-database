@@ -45,11 +45,11 @@ class PreCheck():
         c = conn.cursor()
         list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='MONTH_REVENUE'; ").fetchall()
         if not list_tables:
-            c.execute('CREATE TABLE MONTH_REVENUE ("日期")')
+            c.execute('CREATE TABLE MONTH_REVENUE ("月份")')
 
         new_month_list = []
         for month in month_list:
-            cursor = c.execute(f"SELECT * FROM MONTH_REVENUE WHERE 日期='{month}';")
+            cursor = c.execute(f"SELECT * FROM MONTH_REVENUE WHERE 月份='{month}';")
             if cursor.fetchone() is None:
                 new_month_list.append(month)
             else:
@@ -60,7 +60,7 @@ class PreCheck():
         else:
             keep_run = True
         output = {
-            'date_list': new_month_list,
+            'month_list': new_month_list,
             'keep_run': keep_run,
             'conn': conn,
             'c': c,
