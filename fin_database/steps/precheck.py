@@ -37,11 +37,38 @@ class PreCheck():
         return output
 
 
-    def month_process(self, input_, utils):
+    def month_check(self, date_start, date_end, utils):
+        month_list = utils.calculate_month_period(date_start, date_end)
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='MONTH_REVENUE'; ").fetchall()
+        if not list_tables:
+            c.execute('CREATE TABLE MONTH_REVENUE ("日期")')
+
+        new_month_list = []
+        for month in month_list:
+            cursor = c.execute(f"SELECT * FROM MONTH_REVENUE WHERE 日期='{month}';")
+            if cursor.fetchone() is None:
+                new_month_list.append(month)
+            else:
+                print(month, 'already exist in DB')
+
+        if not new_month_list:
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'date_list': new_month_list,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+        return output
+
+    def f_report_check(self):
         print("")
 
-    def f_report_process(self):
-        print("")
-
-    def futures_process(self):
+    def futures_check(self):
         print("")
