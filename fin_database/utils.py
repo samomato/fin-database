@@ -33,6 +33,31 @@ class Utils:
 
         return month_list
 
+
+    def calculate_season_period(self, date_start, date_end):
+        # 如果輸入的日期涵蓋到財報截止日，則將該截止日對應的財報年度季度收進list
+        # Q4 -> 隔年3/31 ; Q1 -> 5/15 ; Q2 -> 8/14 ; Q3 -> 11/14
+        a_day = timedelta(days=1)
+        period = (date_end + a_day - date_start).days
+        season_list = []
+        for i in range(period):
+            if date_start.strftime('%m%d') == '0331':
+                season = str(int(date_start.strftime('%Y'))-1) + '-4'
+                season_list.append(season)
+            elif date_start.strftime('%m%d') == '0515':
+                season = date_start.strftime('%Y') + '-1'
+                season_list.append(season)
+            elif date_start.strftime('%m%d') == '0814':
+                season = date_start.strftime('%Y') + '-2'
+                season_list.append(season)
+            elif date_start.strftime('%m%d') == '1114':
+                season = date_start.strftime('%Y') + '-3'
+                season_list.append(season)
+
+            date_start = date_start + a_day
+
+        return season_list
+
     def make_dir(self, path):
         if not os.path.isdir(path):
             os.mkdir(path)
