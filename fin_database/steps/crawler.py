@@ -1,4 +1,6 @@
 import requests
+import time
+import urllib3
 from fin_database.steps.step import Step
 
 
@@ -36,8 +38,74 @@ class Crawler(Step):
         return input_
 
 
-    def f_report_process(self):
-        pass
+    def f_report_process(self, input_, utils):
+        year, season = input_['season'].split('-')
+        url = f'''https://mops.twse.com.tw/server-java/t164sb01?step=1&CO_ID={input_["company"]}&SYEAR={year}
+            &SSEASON={season}&REPORT_ID'''
+        try:
+            print(f'start to request {input_["season"]} {input_["company"]}...')
+            res = requests.get(url+'=C')
+            print('for debug')
+        # except (requests.exceptions.ConnectionError, urllib3.exceptions.ProtocolError):
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError')
+            print('try to wait 1 minute and retry...')
+            time.sleep(60)
+            res = requests.get(url+'=C')
+        except Exception as e:
+            print(e)
+            res = [0 for i in range(152)]
+            print(f"other exception for {input_['season']} {input_['company']}, please check")
+            input_['keep_run'] = False
+            return input_
+
+        if len(res.text) < 150:
+            time.sleep(5)
+            print(f'{input_["company"]} in {input_["season"]}無合併財報')
+            try:
+                res = requests.get(url+'=A')
+            except (requests.exceptions.ConnectionError, urllib3.exceptions.ProtocolError):
+                print('ConnectionError')
+                print('try to wait 1 minute and retry...')
+                time.sleep(60)
+                res = requests.get(url + '=A')
+            except Exception as e:
+                print(e)
+                res = [0 for i in range(152)]
+                print(f"other exception for {input_['season']} {input_['company']}, please check")
+                input_['keep_run'] = False
+                return input_
+
+
+            if len(res.text) < 150:
+                time.sleep(5)
+                print(f'{input_["company"]} in {input_["season"]}無個別財報')
+                try:
+                    res = requests.get(url + '=B')
+                except (requests.exceptions.ConnectionError, urllib3.exceptions.ProtocolError):
+                    print('ConnectionError')
+                    print('try to wait 1 minute and retry...')
+                    time.sleep(60)
+                    res = requests.get(url + '=B')
+                except Exception as e:
+                    print(e)
+                    print(f"other exception for {input_['season']} {input_['company']}, please check")
+                    input_['keep_run'] = False
+                    return input_
+
+                if len(res.text) < 120:
+                    print('No any finance report')
+                    input_['keep_run'] = False
+
+        res.encoding = 'big5'
+        f_report_path = f'./f_report/{input_["season"]}/{input_["company"]}.html'
+        with open(f_report_path, 'w', encoding='UTF-8') as fr:
+            fr.write(res.text)
+        input_['data'] = res
+        input_['path'] = f_report_path
+        # input_['keep_run'] = False  # just for test
+        # time.sleep(5)
+        return input_
 
     def futures_process(self):
         pass

@@ -1,7 +1,7 @@
 from datetime import timedelta
-
 from datetime import date
 import os
+import re
 
 
 class Utils:
@@ -58,6 +58,40 @@ class Utils:
 
         return season_list
 
+    def fr_remain_ch(self, df):
+        i = 0
+        for s in df.iloc[:, 0]:
+            df.iloc[i, 0] = re.sub(r'[^\u4e00-\u9fa5]', '', s)
+            i += 1
+        return
+
+    def fr_fit_template(self, df, temp):
+        temp_bl = []
+        for s in df[0]:
+            if s in temp:
+                temp_bl.append(True)
+            else:
+                temp_bl.append(False)
+        df = df.iloc[temp_bl]
+        return df
+
+    def fr_bracket2neg(self, df):
+        i = 0
+        for n in df.iloc[:, 1]:
+            df.iloc[i, 1] = n.replace('(', '-').replace(')', '').replace(',','')
+            i += 1
+        return
+
+    def fr2my_sql_format(self, df, company, season):
+
+        df = df.T
+        df.columns = df.iloc[0]
+        df = df.drop(0)
+        df.insert(0, '公司代號', company)
+        df.insert(0, '季別', season)
+        return df
+
     def make_dir(self, path):
         if not os.path.isdir(path):
             os.mkdir(path)
+

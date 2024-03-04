@@ -1,7 +1,8 @@
 from io import StringIO
 import pandas as pd
 from fin_database.steps.step import Step
-
+import re
+from fin_database.settings import balance_temp, income_temp, cash_temp
 
 class Parser(Step):
 
@@ -57,8 +58,77 @@ class Parser(Step):
         return input_
 
 
-    def f_report_process(self):
-        pass
+    def f_report_process(self, input_, utils):
+        with open(input_['path'],'r', encoding='UTF-8') as fr:
+            data = fr.read().replace("<br>",'\n')
+        # dfs = pd.read_html(data.replace('(','-').replace(')',''))  # dfs = pd.read_html(StringIO(r.text))
+        dfs = pd.read_html(StringIO(data))
+        year, _ = input_['season'].split('-')
+        pd.options.mode.copy_on_write = True
+
+        if int(year) >= 2019:  # 要去掉英文
+            # balance----------------------------------------------------------------------
+            df_balance = dfs[0].iloc[:,1:3].astype(str)
+            utils.fr_remain_ch(df_balance)
+            df_balance.columns = [0, 1]
+            df_balance = utils.fr_fit_template(df_balance, balance_temp)
+            utils.fr_bracket2neg(df_balance)
+            df_balance = utils.fr2my_sql_format(df_balance, input_['company'], input_['season'])
+
+            # # income----------------------------------------------------------------------
+            df_income = dfs[1].iloc[:, 1:3].astype(str)
+            utils.fr_remain_ch(df_income)
+            df_income.columns = [0, 1]
+            df_income = utils.fr_fit_template(df_income, income_temp)
+            utils.fr_bracket2neg(df_income)
+            df_income = utils.fr2my_sql_format(df_income, input_['company'], input_['season'])
+            #
+            # # cash-flow:---------------------------------------------------------------------
+            df_cash_flows = dfs[2].iloc[:, 1:3].astype(str)
+            utils.fr_remain_ch(df_cash_flows)
+            df_cash_flows.columns = [0, 1]
+            df_cash_flows = utils.fr_fit_template(df_cash_flows, cash_temp)
+            utils.fr_bracket2neg(df_cash_flows)
+            df_cash_flows = utils.fr2my_sql_format(df_cash_flows, input_['company'], input_['season'])
+
+
+        else:
+            # balance----------------------------------------------------------------------
+            df_balance = dfs[1].iloc[:,:2].astype(str)
+            utils.fr_remain_ch(df_balance)
+            df_balance.columns = [0, 1]
+            df_balance = utils.fr_fit_template(df_balance, balance_temp)
+            df_balance = utils.fr2my_sql_format(df_balance, input_['company'], input_['season'])
+
+            # income----------------------------------------------------------------------
+            df_income = dfs[2].iloc[:,:2].astype(str)
+            utils.fr_remain_ch(df_income)
+            df_income.columns = [0, 1]
+            df_income = utils.fr_fit_template(df_income, income_temp)
+            df_income = utils.fr2my_sql_format(df_income, input_['company'], input_['season'])
+
+            # cash-flow:---------------------------------------------------------------------
+            df_cash_flows = dfs[3].iloc[:,:2].astype(str)
+            utils.fr_remain_ch(df_cash_flows)
+            df_cash_flows.columns = [0, 1]
+            df_cash_flows = utils.fr_fit_template(df_cash_flows, cash_temp)
+            df_cash_flows = utils.fr2my_sql_format(df_cash_flows, input_['company'], input_['season'])
+
+
+        # with pd.option_context('display.max_rows', None,
+        #                        'display.max_columns', None,
+        #                        'display.precision', 1,
+        #                        ):
+        # print(df_balance, '\n\n\n')
+        # print(df_balance.columns, '\n\n')
+        # print(df_balance, '\n')
+        # print(df_income, '\n\n\n')
+        # print(df_cash_flows)
+
+        # input_['keep_run'] = False  # just for test
+        input_['data'] = [df_balance, df_income, df_cash_flows]
+
+        return input_
 
     def futures_process(self):
         pass

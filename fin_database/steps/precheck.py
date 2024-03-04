@@ -1,7 +1,7 @@
 import os.path
 # from fin_database.steps.step import Step
 # from fin_database.steps.step import StepException
-from fin_database.settings import db_dir, db_name
+from fin_database.settings import db_dir, db_name, f_report_dir
 import sqlite3
 
 class PreCheck():
@@ -67,8 +67,49 @@ class PreCheck():
         }
         return output
 
-    def f_report_check(self):
-        print("")
+    def f_report_check(self, date_start, date_end, utils):
+        season_list = utils.calculate_season_period(date_start, date_end)
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(
+            f"SELECT name FROM sqlite_master  WHERE type='table' AND name='BALANCE'; ").fetchall()
+        if not list_tables:
+            c.execute('CREATE TABLE BALANCE ("季別")')
+        list_tables = c.execute(
+            f"SELECT name FROM sqlite_master  WHERE type='table' AND name='CASH_FLOW'; ").fetchall()
+        if not list_tables:
+            c.execute('CREATE TABLE CASH_FLOW ("季別")')
+        list_tables = c.execute(
+            f"SELECT name FROM sqlite_master  WHERE type='table' AND name='INCOME'; ").fetchall()
+        if not list_tables:
+            c.execute('CREATE TABLE INCOME ("季別")')
+
+        new_season_list = []
+        for season in season_list:
+            year, _ = season.split('-')
+            cursor = c.execute(f"SELECT * FROM BALANCE WHERE 季別='{season}';")
+            if int(year) < 2013:
+                print(year, 'must be later than 2012')
+            elif len(cursor.fetchall()) < 800:
+                new_season_list.append(season)
+                utils.make_dir(f_report_dir)
+                utils.make_dir(f_report_dir + f'/{season}')
+            else:  # 這邊也要改，有10比只能表示有十家公司有在DB裡
+                print(season, 'already exist in DB')
+        print(new_season_list)  # for test
+        if not new_season_list:
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'season_list': new_season_list,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+        return output
 
     def futures_check(self):
         print("")

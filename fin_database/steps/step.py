@@ -15,11 +15,11 @@ class Step(ABC):
         pass
 
     @abstractmethod
-    def f_report_process(self):
+    def f_report_process(self, input_, utils):
         pass
 
     @abstractmethod
-    def futures_process(self):
+    def futures_process(self, input_, utils):
         pass
 
 
