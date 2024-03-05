@@ -4,8 +4,8 @@ from fin_database.pipeline import Pipeline
 
 
 def main():
-    date_start = date(2020, 4, 10)
-    date_end = date(2020, 5, 30)
+    date_start = date(2020, 3, 10)
+    date_end = date(2020, 4, 1)
     # dtype = 'daily'
     # dtype = 'month'
     dtype = 'f_report'

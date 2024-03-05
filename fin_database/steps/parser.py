@@ -1,8 +1,8 @@
 from io import StringIO
 import pandas as pd
 from fin_database.steps.step import Step
-import re
 from fin_database.settings import balance_temp, income_temp, cash_temp
+
 
 class Parser(Step):
 
@@ -90,7 +90,6 @@ class Parser(Step):
             df_cash_flows = utils.fr_fit_template(df_cash_flows, cash_temp)
             utils.fr_bracket2neg(df_cash_flows)
             df_cash_flows = utils.fr2my_sql_format(df_cash_flows, input_['company'], input_['season'])
-
 
         else:
             # balance----------------------------------------------------------------------

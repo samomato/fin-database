@@ -1,6 +1,5 @@
 import requests
-import time
-import urllib3
+from time import sleep
 from fin_database.steps.step import Step
 
 
@@ -44,13 +43,16 @@ class Crawler(Step):
             &SSEASON={season}&REPORT_ID'''
         try:
             print(f'start to request {input_["season"]} {input_["company"]}...')
-            res = requests.get(url+'=C')
+            res = requests.get(url+'=C', timeout=1)
             print('for debug')
-        # except (requests.exceptions.ConnectionError, urllib3.exceptions.ProtocolError):
+        except requests.exceptions.Timeout as err:
+            print(err)
+            sleep(30)
+            res = requests.get(url+'=C')
         except requests.exceptions.ConnectionError:
             print('ConnectionError')
             print('try to wait 1 minute and retry...')
-            time.sleep(60)
+            sleep(60)
             res = requests.get(url+'=C')
         except Exception as e:
             print(e)
@@ -60,14 +62,18 @@ class Crawler(Step):
             return input_
 
         if len(res.text) < 150:
-            time.sleep(5)
+            sleep(5)
             print(f'{input_["company"]} in {input_["season"]}無合併財報')
             try:
-                res = requests.get(url+'=A')
-            except (requests.exceptions.ConnectionError, urllib3.exceptions.ProtocolError):
+                res = requests.get(url+'=A', timeout=1)
+            except requests.exceptions.Timeout as err:
+                print(err)
+                sleep(30)
+                res = requests.get(url + '=A')
+            except requests.exceptions.ConnectionError:
                 print('ConnectionError')
                 print('try to wait 1 minute and retry...')
-                time.sleep(60)
+                sleep(60)
                 res = requests.get(url + '=A')
             except Exception as e:
                 print(e)
@@ -78,14 +84,18 @@ class Crawler(Step):
 
 
             if len(res.text) < 150:
-                time.sleep(5)
-                print(f'{input_["company"]} in {input_["season"]}無個別財報')
+                sleep(5)
+                print(f'{input_["company"]} in {input_["season"]}也無個別財報')
                 try:
+                    res = requests.get(url + '=B', timeout=1)
+                except requests.exceptions.Timeout as err:
+                    print(err)
+                    sleep(30)
                     res = requests.get(url + '=B')
-                except (requests.exceptions.ConnectionError, urllib3.exceptions.ProtocolError):
+                except requests.exceptions.ConnectionError:
                     print('ConnectionError')
                     print('try to wait 1 minute and retry...')
-                    time.sleep(60)
+                    sleep(60)
                     res = requests.get(url + '=B')
                 except Exception as e:
                     print(e)
@@ -104,7 +114,6 @@ class Crawler(Step):
         input_['data'] = res
         input_['path'] = f_report_path
         # input_['keep_run'] = False  # just for test
-        # time.sleep(5)
         return input_
 
     def futures_process(self):

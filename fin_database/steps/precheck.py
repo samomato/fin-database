@@ -92,11 +92,11 @@ class PreCheck():
             cursor = c.execute(f"SELECT * FROM BALANCE WHERE 季別='{season}';")
             if int(year) < 2013:
                 print(year, 'must be later than 2012')
-            elif len(cursor.fetchall()) < 800:
+            elif len(cursor.fetchall()) < 790:
                 new_season_list.append(season)
                 utils.make_dir(f_report_dir)
                 utils.make_dir(f_report_dir + f'/{season}')
-            else:  # 這邊也要改，有10比只能表示有十家公司有在DB裡
+            else:  # 這邊也要改
                 print(season, 'already exist in DB')
         print(new_season_list)  # for test
         if not new_season_list:
