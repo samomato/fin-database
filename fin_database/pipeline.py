@@ -24,7 +24,7 @@ class Pipeline:
                                 break
                             input_ = step.daily_process(input_, utils)
 
-                        sleep(5)
+                        sleep(10)
                     result['conn'].close()
 
             case 'month':
@@ -38,7 +38,7 @@ class Pipeline:
                                 break
                             input_ = step.month_process(input_, utils)
 
-                        sleep(5)
+                        sleep(10)
                     result['conn'].close()
 
             case 'f_report':
@@ -55,17 +55,22 @@ class Pipeline:
                                 if input_['keep_run'] == False:
                                     break
                                 input_ = step.f_report_process(input_, utils)
-                        # company = '3592' # only for test
-                        # input_ = {'season': season, 'company': company, 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
-                        # for step in steps:
-                        #     if input_['keep_run'] == False:
-                        #         break
-                        #     input_ = step.f_report_process(input_, utils)
 
                     result['conn'].close()
 
             case 'futures':
-                pass
+                result = PreCheck().futures_check(date_start, date_end, utils)
+                if result['keep_run'] == True:
+                    steps = [Crawler(), Parser(), Storer()]
+                    for date_ in result['date_list']:
+                        input_ = {'date': date_, 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
+                        for step in steps:
+                            if input_['keep_run'] == False:
+                                break
+                            input_ = step.futures_process(input_, utils)
+
+                        sleep(10)
+                    result['conn'].close()
 
     def f_report_seed_generator(self, season, utils):  # 要在加檢查資料夾已有財報，若有完整財報則跳至PARSER步驟
         year, season = season.split('-')

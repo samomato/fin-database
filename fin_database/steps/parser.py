@@ -2,12 +2,14 @@ from io import StringIO
 import pandas as pd
 from fin_database.steps.step import Step
 from fin_database.settings import balance_temp, income_temp, cash_temp
+from bs4 import BeautifulSoup
+
 
 
 class Parser(Step):
 
     def daily_process(self, input_, utils):
-        print(f'Processing the daily price of {input_["date"]} to DB')
+        print(f'Parsing price of {input_["date"]}...')
         lines = input_['data'].text.split('\n')
         stock_lines = []
         for l in lines:
@@ -33,7 +35,7 @@ class Parser(Step):
         return input_
 
     def month_process(self, input_, utils):
-        print(f'Processing the month revenue of {input_["month"]} to DB')
+        print(f'Parsing revenue of {input_["month"]}...')
         dfs = pd.read_html(StringIO(input_['data'].text))
         new_df = []
 
@@ -59,6 +61,7 @@ class Parser(Step):
 
 
     def f_report_process(self, input_, utils):
+        print(f"Parsing financial report of {input_['season']} of {input_['company']}...")
         with open(input_['path'],'r', encoding='UTF-8') as fr:
             data = fr.read().replace("<br>",'\n')
         # dfs = pd.read_html(data.replace('(','-').replace(')',''))  # dfs = pd.read_html(StringIO(r.text))
@@ -113,21 +116,49 @@ class Parser(Step):
             df_cash_flows = utils.fr_fit_template(df_cash_flows, cash_temp)
             df_cash_flows = utils.fr2my_sql_format(df_cash_flows, input_['company'], input_['season'])
 
-
-        # with pd.option_context('display.max_rows', None,
-        #                        'display.max_columns', None,
-        #                        'display.precision', 1,
-        #                        ):
-        # print(df_balance, '\n\n\n')
-        # print(df_balance.columns, '\n\n')
-        # print(df_balance, '\n')
-        # print(df_income, '\n\n\n')
-        # print(df_cash_flows)
-
-        # input_['keep_run'] = False  # just for test
         input_['data'] = [df_balance, df_income, df_cash_flows]
 
         return input_
 
-    def futures_process(self):
-        pass
+    def futures_process(self, input_, utils):
+        print(f'Parsing futures of {input_["date"]}...')
+        soup = BeautifulSoup(input_['data'].text, 'html.parser')
+        trs = soup.find_all('tr', class_='12bk')  # 還沒解決當網頁沒data時秀出except訊息
+        data_date = []
+        if trs == []:
+            print(f"No data for {input_['date']}. It may be Taiwan Holiday.")
+            input_['keep_run'] = False
+            return input_
+        rows = trs[3:]
+        # print(rows)
+        i = 0
+        product = '臺股期貨'
+        for row in rows:
+
+            names = row.find_all('th')
+            cells = [name.text.strip() for name in names]
+            nums = row.find_all('td')
+            if cells[0] == '期貨小計':
+                break
+            if len(cells) > 1:
+                product = [cells[1]]
+                cells = cells[1:] + [num.text.strip() for num in nums]
+            else:
+                cells = product + cells + [num.text.strip() for num in nums]
+
+            converted = [int(cell.replace(',', '')) for cell in cells[2:]]
+            data_row = cells[:2] + converted
+
+            data_date.append(data_row)
+
+        new_label = ['商品', '法人', '交易多方口數', '交易多方金額', '交易空方口數', '交易空方金額', '交易淨額口數',
+                     '交易淨額金額',
+                     '未平倉多方口數', '未平倉多方金額', '未平倉空方口數', '未平倉空方金額', '未平倉淨額口數',
+                     '未平倉淨額金額']
+        df = pd.DataFrame(data_date)
+        df.columns = new_label
+        df.insert(0, '日期', input_['date'])
+        df = df.set_index(['日期'])
+        input_['data'] = df
+        return input_
+

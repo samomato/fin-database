@@ -72,10 +72,19 @@ class Storer(Step):
             input_['conn'].commit()
         input_['data'][2].to_sql('CASH_FLOW', input_['conn'], if_exists='append', index=False)
 
-
         return
 
+    def futures_process(self, input_, utils):
+        cn_list = ['日期']
+        [cn_list.append(_) for _ in input_['data'].columns]
+        input_['c'].execute('PRAGMA TABLE_INFO(FUTURES)')
+        columns_of_tables = [tup[1] for tup in input_['c'].fetchall()]
+        if cn_list != columns_of_tables:
+            for cn in cn_list:
+                if cn not in columns_of_tables:
+                    input_['c'].execute(f"ALTER TABLE 'FUTURES' ADD COLUMN {cn}")
+                    print(f'Add new column {cn} to DB from {input_["date"]}')
+            input_['conn'].commit()
+        input_['data'].to_sql('FUTURES', input_['conn'], if_exists='append')
 
-
-    def futures_process(self):
-        pass
+        return

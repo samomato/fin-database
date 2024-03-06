@@ -22,7 +22,7 @@ class PreCheck():
             if cursor.fetchone() is None:
                 new_date_list.append(date)
             else:
-                print(date, 'already exist in DB')
+                print(date, 'already exist in DAILY Table of DB')
 
         if not new_date_list:
             keep_run = False
@@ -111,5 +111,32 @@ class PreCheck():
         }
         return output
 
-    def futures_check(self):
-        print("")
+    def futures_check(self, date_start, date_end, utils):
+        date_list = utils.calculate_date_period(date_start, date_end)
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='FUTURES'; ").fetchall()
+        if not list_tables:
+            c.execute('CREATE TABLE FUTURES ("日期")')
+
+        new_date_list = []
+        for date in date_list:
+            cursor = c.execute(f"SELECT * FROM FUTURES WHERE 日期='{date}';")
+            if cursor.fetchone() is None:
+                new_date_list.append(date)
+            else:
+                print(date, 'already exist in FUTURES Table of DB')
+
+        if not new_date_list:
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'date_list': new_date_list,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+        return output
