@@ -1,12 +1,11 @@
-from datetime import date
-from time import sleep
 import sqlite3
+from time import sleep
+# from progressbar import progressbar
 from fin_database.utils import Utils
 from fin_database.steps.precheck import PreCheck
 from fin_database.steps.crawler import Crawler
 from fin_database.steps.parser import Parser
 from fin_database.steps.storer import Storer
-from progressbar import progressbar
 
 
 class Pipeline:
@@ -45,12 +44,14 @@ class Pipeline:
                 result = PreCheck().f_report_check(date_start, date_end, utils)
                 if result['keep_run'] == True:
                     steps = [Crawler(), Parser(), Storer()]
+                    # result['season_list'] = ['2015-4']  # for test only
                     for season in result['season_list']:
                         seed = self.f_report_seed_generator(season, utils)
                         seed = self.f_report_seed_not_exist(season, seed, result['c'])
-                        for company in progressbar(seed):
+                        # seed = ['2505']  # for test only
+                        for company in seed:
                             input_ = {'season': season, 'company': company, 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
-                            sleep(5)
+                            sleep(10)
                             for step in steps:
                                 if input_['keep_run'] == False:
                                     break
@@ -72,7 +73,8 @@ class Pipeline:
                         sleep(10)
                     result['conn'].close()
 
-    def f_report_seed_generator(self, season, utils):  # 要在加檢查資料夾已有財報，若有完整財報則跳至PARSER步驟
+    @staticmethod
+    def f_report_seed_generator(season, utils):  # 要在加檢查資料夾已有財報，若有完整財報則跳至PARSER步驟
         year, season = season.split('-')
         month = year + '-' + str(int(season)*3)
         input_ = {'month': month, 'conn': 'na', 'c': 'na2', 'keep_run': True}
@@ -81,7 +83,8 @@ class Pipeline:
         seed = input_['data']['公司代號'].tolist()
         return seed
 
-    def f_report_seed_not_exist(self, season, seed, c):
+    @staticmethod
+    def f_report_seed_not_exist(season, seed, c):
         new_seed = []
         try:
             for company in seed:

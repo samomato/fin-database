@@ -1,9 +1,9 @@
 from io import StringIO
+from datetime import datetime
 import pandas as pd
+from bs4 import BeautifulSoup
 from fin_database.steps.step import Step
 from fin_database.settings import balance_temp, income_temp, cash_temp
-from bs4 import BeautifulSoup
-
 
 
 class Parser(Step):
@@ -27,10 +27,12 @@ class Parser(Step):
         df = df.apply(lambda s: pd.to_numeric(s, errors='coerce'))
         df['證券代號'] = df_temp
         # coerce means show NaN if failed  # 沒有交易量的股票顯示"--"，轉譯過就變成NaN
+        df = df.rename(columns={'證券代號': 'stockID'})
+        # df['stockID'] = df['stockID'].astype(str)
         remain_label = df.columns[df.isnull().sum() != len(df)]
         df = df[remain_label]  # clear up whole NaN columns
-        df.insert(0, '日期', input_['date'])
-        df = df.set_index('日期')
+        df.insert(0, 'update_date', datetime.strptime(input_['date'], "%Y-%m-%d"))
+        df = df.set_index(['update_date', 'stockID'])
         input_['data'] = df
         return input_
 
@@ -59,17 +61,15 @@ class Parser(Step):
         input_['data'] = df
         return input_
 
-
     def f_report_process(self, input_, utils):
         print(f"Parsing financial report of {input_['season']} of {input_['company']}...")
         with open(input_['path'],'r', encoding='UTF-8') as fr:
             data = fr.read().replace("<br>",'\n')
-        # dfs = pd.read_html(data.replace('(','-').replace(')',''))  # dfs = pd.read_html(StringIO(r.text))
         dfs = pd.read_html(StringIO(data))
         year, _ = input_['season'].split('-')
         pd.options.mode.copy_on_write = True
 
-        if int(year) >= 2019:  # 要去掉英文
+        if int(year) >= 2019:
             # balance----------------------------------------------------------------------
             df_balance = dfs[0].iloc[:,1:3].astype(str)
             utils.fr_remain_ch(df_balance)

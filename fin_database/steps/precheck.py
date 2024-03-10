@@ -1,4 +1,7 @@
 import os.path
+from datetime import datetime
+import pandas as pd
+
 # from fin_database.steps.step import Step
 # from fin_database.steps.step import StepException
 from fin_database.settings import db_dir, db_name, f_report_dir
@@ -14,11 +17,13 @@ class PreCheck():
         c = conn.cursor()
         list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='DAILY'; ").fetchall()
         if not list_tables:
-            c.execute('CREATE TABLE DAILY ("日期")')
+            dft = pd.DataFrame({'update_date': [datetime(1900, 1, 1)],'stockID':['temp']})
+            dft = dft.set_index(['update_date', 'stockID'])
+            dft.to_sql('DAILY', conn, if_exists='append')
 
         new_date_list = []
         for date in date_list:
-            cursor = c.execute(f"SELECT * FROM DAILY WHERE 日期='{date}';")
+            cursor = c.execute(f"SELECT * FROM DAILY WHERE update_date='{date}';")
             if cursor.fetchone() is None:
                 new_date_list.append(date)
             else:
