@@ -9,7 +9,8 @@ import sqlite3
 
 class PreCheck():
 
-    def daily_check(self, date_start, date_end, utils):
+    @staticmethod
+    def daily_check(date_start, date_end, utils):
         date_list = utils.calculate_date_period(date_start, date_end)
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
@@ -17,9 +18,12 @@ class PreCheck():
         c = conn.cursor()
         list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='DAILY'; ").fetchall()
         if not list_tables:
-            dft = pd.DataFrame({'update_date': [datetime(1900, 1, 1)],'stockID':['temp']})
-            dft = dft.set_index(['update_date', 'stockID'])
-            dft.to_sql('DAILY', conn, if_exists='append')
+            # dft = pd.DataFrame({'update_date': [datetime(1900, 1, 1)],'stockID':['temp']})
+            # dft = dft.set_index(['update_date', 'stockID'])
+            # dft.to_sql('DAILY', conn, if_exists='append')
+            c.execute(f'CREATE TABLE DAILY ("update_date" "TIMESTAMP", "stockID" "TEXT")')
+            c.execute('CREATE INDEX "ix_DAILY_update_date_stockID" on DAILY(update_date, stockID)')
+            conn.commit()
 
         new_date_list = []
         for date in date_list:
@@ -42,7 +46,8 @@ class PreCheck():
         return output
 
 
-    def month_check(self, date_start, date_end, utils):
+    @staticmethod
+    def month_check(date_start, date_end, utils):
         month_list = utils.calculate_month_period(date_start, date_end)
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
@@ -72,7 +77,8 @@ class PreCheck():
         }
         return output
 
-    def f_report_check(self, date_start, date_end, utils):
+    @staticmethod
+    def f_report_check(date_start, date_end, utils):
         season_list = utils.calculate_season_period(date_start, date_end)
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
