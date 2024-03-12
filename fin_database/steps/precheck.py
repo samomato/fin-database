@@ -1,4 +1,5 @@
 import os.path
+from datetime import timedelta
 from datetime import datetime
 import pandas as pd
 
@@ -18,9 +19,6 @@ class PreCheck():
         c = conn.cursor()
         list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='DAILY'; ").fetchall()
         if not list_tables:
-            # dft = pd.DataFrame({'update_date': [datetime(1900, 1, 1)],'stockID':['temp']})
-            # dft = dft.set_index(['update_date', 'stockID'])
-            # dft.to_sql('DAILY', conn, if_exists='append')
             c.execute(f'CREATE TABLE DAILY ("update_date" "TIMESTAMP", "stockID" "TEXT")')
             c.execute('CREATE INDEX "ix_DAILY_update_date_stockID" on DAILY(update_date, stockID)')
             conn.commit()
@@ -48,29 +46,35 @@ class PreCheck():
 
     @staticmethod
     def month_check(date_start, date_end, utils):
-        month_list = utils.calculate_month_period(date_start, date_end)
+        update_list = utils.calculate_month_period(date_start, date_end)
+        print(update_list)  # just for test
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
         conn = sqlite3.connect(db_path)
         c = conn.cursor()
         list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='MONTH_REVENUE'; ").fetchall()
         if not list_tables:
-            c.execute('CREATE TABLE MONTH_REVENUE ("月份")')
+            c.execute(f'CREATE TABLE MONTH_REVENUE ("update_date" "TIMESTAMP", "stockID" "TEXT")')
+            c.execute('CREATE INDEX "ix_MONTH_REVENUE_update_date_stockID" on MONTH_REVENUE(update_date, stockID)')
+            conn.commit()
+            # c.execute('CREATE TABLE MONTH_REVENUE ("月份")')
 
-        new_month_list = []
-        for month in month_list:
-            cursor = c.execute(f"SELECT * FROM MONTH_REVENUE WHERE 月份='{month}';")
+        new_update_list = []
+        month_list = []
+        for date_ in update_list:
+            cursor = c.execute(f"SELECT * FROM MONTH_REVENUE WHERE update_date='{date_}';")
             if cursor.fetchone() is None:
-                new_month_list.append(month)
+                new_update_list.append(date_)
+                month_list.append([date_, (date_ - timedelta(days=30)).strftime('%Y-%m')])
             else:
-                print(month, 'already exist in DB')
+                print(date_, 'already exist in DB')
 
-        if not new_month_list:
+        if not new_update_list:
             keep_run = False
         else:
             keep_run = True
         output = {
-            'month_list': new_month_list,
+            'month_list': month_list,
             'keep_run': keep_run,
             'conn': conn,
             'c': c,

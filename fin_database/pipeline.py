@@ -31,7 +31,8 @@ class Pipeline:
                 if result['keep_run'] == True:
                     steps = [Crawler(), Parser(), Storer()]
                     for month in result['month_list']:
-                        input_ = {'month': month, 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
+                        input_ = {'update_date': month[0], 'month': month[1],
+                                  'conn': result['conn'], 'c': result['c'], 'keep_run': True}
                         for step in steps:
                             if input_['keep_run'] == False:
                                 break

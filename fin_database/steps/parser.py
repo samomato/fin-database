@@ -55,9 +55,10 @@ class Parser(Step):
             df = df.loc[~(df['公司代號'] == '合計')]
         else:
             df = df.loc[~(df['公司代號'] == '合計')].drop('備註', axis=1)
-
-        df.insert(0, '月份', input_['month'])
-        df = df.set_index(['月份'])
+        df = df.rename(columns={'公司代號': 'stockID'})
+        df.insert(0, 'update_date', input_['update_date'])
+        df.insert(1, '月份', input_['month'])
+        df = df.set_index(['update_date', 'stockID'])
         input_['data'] = df
         return input_
 
