@@ -74,8 +74,22 @@ class Crawler(Step):
         input_['roc_year'] = roc_year
         return input_
 
-
     def f_report_process(self, input_, utils):
+        # 這裡確定資料夾是否已有載好的財報，有的話就讀出來return
+        f_report_path = f'./f_report/{input_["season"]}/{input_["company"]}.html'
+        if utils.check_file_exist(f_report_path):
+            print(f"{input_['season']} {input_['company']} financial report had already download.")
+            with open(f_report_path, 'r', encoding='UTF-8') as fr:
+                r = fr.read()
+            if len(r) < 4000:
+                print('No any finance report')
+                input_['keep_run'] = False
+            else:
+                input_['data'] = r
+                input_['path'] = f_report_path
+            sleep(0.1)
+            return input_
+
         year, season = input_['season'].split('-')
         url = f'''https://mops.twse.com.tw/server-java/t164sb01?step=1&CO_ID={input_["company"]}&SYEAR={year}
             &SSEASON={season}&REPORT_ID'''
@@ -152,7 +166,6 @@ class Crawler(Step):
                     input_['keep_run'] = False
 
         r.encoding = 'big5'
-        f_report_path = f'./f_report/{input_["season"]}/{input_["company"]}.html'
         with open(f_report_path, 'w', encoding='UTF-8') as fr:
             fr.write(r.text)
         input_['data'] = r
@@ -166,6 +179,7 @@ class Crawler(Step):
         url = (f'https://www.taifex.com.tw/cht/3/futContractsDate?queryType=1&doQuery=1&queryDate'
                f'={year}%2F{month}%2F{day}')
         print(f"crawling {input_['date']} futures data...")
+        sleep(8)
         try:
             r = requests.get(url, timeout=5, headers=header)
         except requests.exceptions.Timeout as err:

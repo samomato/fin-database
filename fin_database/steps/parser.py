@@ -161,7 +161,7 @@ class Parser(Step):
         df = pd.DataFrame(data_date)
         df.columns = new_label
         df = df.iloc[:24]  # test only
-        df.insert(0, 'update_date', input_['date'])
+        df.insert(0, 'update_date', datetime.strptime(input_['date'], "%Y-%m-%d"))
         df = df.set_index(['update_date', 'product', '法人'])
         # input_['keep_run'] = False  # test only
         input_['data'] = df

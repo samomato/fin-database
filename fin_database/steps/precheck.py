@@ -110,16 +110,17 @@ class PreCheck():
         new_season_list = []
         for season, date_ in zip(season_list, update_list):
             year, _ = season.split('-')
-            cursor = c.execute(f"SELECT * FROM BALANCE WHERE 季別='{season}';")  # 再改成date_
+            # cursor = c.execute(f"SELECT * FROM BALANCE WHERE 季別='{season}';")  # 再改成date_
             if int(year) < 2013:
                 print(year, 'must be later than 2012')
-            elif len(cursor.fetchall()) < 800:
+            # elif len(cursor.fetchall()) < 800:
+            else:
                 new_update_list.append(date_)
                 new_season_list.append(season)
                 utils.make_dir(f_report_dir)
                 utils.make_dir(f_report_dir + f'/{season}')
-            else:  # 這邊也要改
-                print(season, 'already exist in DB')
+            # else:  # 這邊也要改
+            #     print(season, 'already exist in DB')
 
         if not new_season_list:
             keep_run = False
@@ -149,7 +150,8 @@ class PreCheck():
 
         new_date_list = []
         for date in date_list:
-            cursor = c.execute(f"SELECT * FROM FUTURES WHERE update_date='{date}';")
+            date_ = datetime.strptime(date, "%Y-%m-%d")
+            cursor = c.execute(f"SELECT * FROM FUTURES WHERE update_date='{date_}';")
             if cursor.fetchone() is None:
                 new_date_list.append(date)
             else:

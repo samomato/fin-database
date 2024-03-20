@@ -45,11 +45,10 @@ class Pipeline:
                 result = PreCheck().f_report_check(date_start, date_end, utils)
                 if result['keep_run'] == True:
                     steps = [Crawler(), Parser(), Storer()]
-                    # result['season_list'] = ['2015-4']  # for test only
                     for season, date_ in zip(result['season_list'], result['update_list']):
                         seed = self.f_report_seed_generator(season, date_, utils)
-                        seed = self.f_report_seed_not_exist(season, seed, result['c'])
-                        print(seed)  # for test only
+                        seed = self.company_need_process(season, seed, result['c'])
+                        # print(season, '\n', date_)
                         # seed = ['2330']  # for test only
                         for company in seed:
 
@@ -87,12 +86,17 @@ class Pipeline:
         return seed
 
     @staticmethod
-    def f_report_seed_not_exist(season, seed, c):
+    def company_need_process(season, seed, c):
         new_seed = []
         try:
             for company in seed:
+                c.execute(f"SELECT stockID FROM 'BALANCE' WHERE 季別='{season}' AND stockID='{company}'")
+                f1 = c.fetchone()
                 c.execute(f"SELECT stockID FROM 'CASH_FLOW' WHERE 季別='{season}' AND stockID='{company}'")
-                if c.fetchone() == None:
+                f2 = c.fetchone()
+                c.execute(f"SELECT stockID FROM 'INCOME' WHERE 季別='{season}' AND stockID='{company}'")
+                f3 = c.fetchone()
+                if (f1 and f2 and f3) is None:
                     new_seed.append(company)
         except sqlite3.OperationalError:
             print('maybe the 1st time before creating DB')

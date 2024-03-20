@@ -94,7 +94,11 @@ class Utils:
 
         return df
 
-    def make_dir(self, path):
+    @staticmethod
+    def make_dir(path):
         if not os.path.isdir(path):
             os.mkdir(path)
 
+    @staticmethod
+    def check_file_exist(file):
+        return os.path.isfile(file)
