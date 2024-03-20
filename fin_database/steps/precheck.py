@@ -25,7 +25,9 @@ class PreCheck():
 
         new_date_list = []
         for date in date_list:
-            cursor = c.execute(f"SELECT * FROM DAILY WHERE update_date='{date}';")
+            date_ = datetime.strptime(date, "%Y-%m-%d")
+            cursor = c.execute(f"SELECT (stockID) FROM DAILY WHERE update_date='{date_}';")
+            print(cursor.fetchone())
             if cursor.fetchone() is None:
                 new_date_list.append(date)
             else:
@@ -47,7 +49,7 @@ class PreCheck():
     @staticmethod
     def month_check(date_start, date_end, utils):
         update_list = utils.calculate_month_period(date_start, date_end)
-        print(update_list)  # just for test
+        # print(update_list)  # just for test
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
         conn = sqlite3.connect(db_path)
@@ -83,7 +85,7 @@ class PreCheck():
 
     @staticmethod
     def f_report_check(date_start, date_end, utils):
-        season_list = utils.calculate_season_period(date_start, date_end)
+        season_list, update_list = utils.calculate_season_period(date_start, date_end)
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
         conn = sqlite3.connect(db_path)
@@ -91,42 +93,49 @@ class PreCheck():
         list_tables = c.execute(
             f"SELECT name FROM sqlite_master  WHERE type='table' AND name='BALANCE'; ").fetchall()
         if not list_tables:
-            c.execute('CREATE TABLE BALANCE ("季別")')
+            c.execute('CREATE TABLE BALANCE ("update_date" "TIMESTAMP", "stockID" "TEXT", "季別" "TEXT")')
+            c.execute('CREATE INDEX "ix_BALANCE_update_date_stockID" on BALANCE(update_date, stockID)')
         list_tables = c.execute(
             f"SELECT name FROM sqlite_master  WHERE type='table' AND name='CASH_FLOW'; ").fetchall()
         if not list_tables:
-            c.execute('CREATE TABLE CASH_FLOW ("季別")')
+            c.execute('CREATE TABLE CASH_FLOW ("update_date" "TIMESTAMP", "stockID" "TEXT", "季別" "TEXT")')
+            c.execute('CREATE INDEX "ix_CASH_FLOW_update_date_stockID" on CASH_FLOW(update_date, stockID)')
         list_tables = c.execute(
             f"SELECT name FROM sqlite_master  WHERE type='table' AND name='INCOME'; ").fetchall()
         if not list_tables:
-            c.execute('CREATE TABLE INCOME ("季別")')
+            c.execute('CREATE TABLE INCOME ("update_date" "TIMESTAMP", "stockID" "TEXT", "季別" "TEXT")')
+            c.execute('CREATE INDEX "ix_INCOME_update_date_stockID" on INCOME(update_date, stockID)')
 
+        new_update_list = []
         new_season_list = []
-        for season in season_list:
+        for season, date_ in zip(season_list, update_list):
             year, _ = season.split('-')
-            cursor = c.execute(f"SELECT * FROM BALANCE WHERE 季別='{season}';")
+            cursor = c.execute(f"SELECT * FROM BALANCE WHERE 季別='{season}';")  # 再改成date_
             if int(year) < 2013:
                 print(year, 'must be later than 2012')
-            elif len(cursor.fetchall()) < 790:
+            elif len(cursor.fetchall()) < 800:
+                new_update_list.append(date_)
                 new_season_list.append(season)
                 utils.make_dir(f_report_dir)
                 utils.make_dir(f_report_dir + f'/{season}')
             else:  # 這邊也要改
                 print(season, 'already exist in DB')
-        print(new_season_list)  # for test
+
         if not new_season_list:
             keep_run = False
         else:
             keep_run = True
         output = {
             'season_list': new_season_list,
+            'update_list': new_update_list,
             'keep_run': keep_run,
             'conn': conn,
             'c': c,
         }
         return output
 
-    def futures_check(self, date_start, date_end, utils):
+    @staticmethod
+    def futures_check(date_start, date_end, utils):
         date_list = utils.calculate_date_period(date_start, date_end)
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
@@ -134,11 +143,13 @@ class PreCheck():
         c = conn.cursor()
         list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='FUTURES'; ").fetchall()
         if not list_tables:
-            c.execute('CREATE TABLE FUTURES ("日期")')
+            c.execute(f'CREATE TABLE FUTURES ("update_date" "TIMESTAMP", "product" "TEXT", "法人" "TEXT")')
+            c.execute('CREATE INDEX "ix_FUTURES_update_date_product" on FUTURES(update_date, product, 法人)')
+            conn.commit()
 
         new_date_list = []
         for date in date_list:
-            cursor = c.execute(f"SELECT * FROM FUTURES WHERE 日期='{date}';")
+            cursor = c.execute(f"SELECT * FROM FUTURES WHERE update_date='{date}';")
             if cursor.fetchone() is None:
                 new_date_list.append(date)
             else:

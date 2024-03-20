@@ -27,17 +27,6 @@ class Utils:
                 # month_list.append((date_start - timedelta(days=30)).strftime('%Y-%m'))
             date_start = date_start + delta
 
-            # month_list.pop(-1)
-        # month_list = [date_start.strftime('%Y-%m')]
-        # for i in range(int(period)):
-        #     old_month = date_start.strftime('%Y-%m')
-        #     date_start = date_start + delta
-        #     new_month = date_start.strftime('%Y-%m')
-        #     if new_month != old_month:
-        #         month_list.append(new_month)
-        # # Can't download when before 10th of the newest month:
-        # if int(date_end.month) == int(today.month) and int(today.day) < 10:
-        #     month_list.pop(-1)
         return update_list
 
     def calculate_season_period(self, date_start, date_end):
@@ -46,23 +35,28 @@ class Utils:
         a_day = timedelta(days=1)
         period = (date_end + a_day - date_start).days
         season_list = []
+        update_list = []
         for i in range(period):
             if date_start.strftime('%m%d') == '0331':
+                update_list.append(date_start)
                 season = str(int(date_start.strftime('%Y'))-1) + '-4'
                 season_list.append(season)
             elif date_start.strftime('%m%d') == '0515':
+                update_list.append(date_start)
                 season = date_start.strftime('%Y') + '-1'
                 season_list.append(season)
             elif date_start.strftime('%m%d') == '0814':
+                update_list.append(date_start)
                 season = date_start.strftime('%Y') + '-2'
                 season_list.append(season)
             elif date_start.strftime('%m%d') == '1114':
+                update_list.append(date_start)
                 season = date_start.strftime('%Y') + '-3'
                 season_list.append(season)
 
             date_start = date_start + a_day
 
-        return season_list
+        return season_list, update_list
 
     def fr_remain_ch(self, df):
         i = 0
@@ -88,13 +82,16 @@ class Utils:
             i += 1
         return
 
-    def fr2my_sql_format(self, df, company, season):
+    def fr2my_sql_format(self, df, company, season, date_):
 
         df = df.T
         df.columns = df.iloc[0]
         df = df.drop(0)
-        df.insert(0, '公司代號', company)
         df.insert(0, '季別', season)
+        df.insert(0, 'stockID', company)
+        df.insert(0, 'update_date', date_)
+        df.set_index(['update_date', 'stockID'])
+
         return df
 
     def make_dir(self, path):

@@ -1,6 +1,6 @@
 import sqlite3
 from time import sleep
-# from progressbar import progressbar
+from progressbar import progressbar
 from fin_database.utils import Utils
 from fin_database.steps.precheck import PreCheck
 from fin_database.steps.crawler import Crawler
@@ -16,14 +16,14 @@ class Pipeline:
                 result = PreCheck().daily_check(date_start, date_end, utils)
                 if result['keep_run'] == True:
                     steps = [Crawler(), Parser(), Storer()]
-                    for date_ in result['date_list']:
+                    for date_ in progressbar(result['date_list'], redirect_stdout=True):
                         input_ = {'date': date_, 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
                         for step in steps:
                             if input_['keep_run'] == False:
                                 break
                             input_ = step.daily_process(input_, utils)
 
-                        sleep(10)
+                        sleep(8)
                     result['conn'].close()
 
             case 'month':
@@ -46,13 +46,15 @@ class Pipeline:
                 if result['keep_run'] == True:
                     steps = [Crawler(), Parser(), Storer()]
                     # result['season_list'] = ['2015-4']  # for test only
-                    for season in result['season_list']:
-                        seed = self.f_report_seed_generator(season, utils)
+                    for season, date_ in zip(result['season_list'], result['update_list']):
+                        seed = self.f_report_seed_generator(season, date_, utils)
                         seed = self.f_report_seed_not_exist(season, seed, result['c'])
-                        # seed = ['2505']  # for test only
+                        print(seed)  # for test only
+                        # seed = ['2330']  # for test only
                         for company in seed:
-                            input_ = {'season': season, 'company': company, 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
-                            sleep(10)
+
+                            input_ = {'season': season, 'update_date': date_, 'company': company,
+                                      'conn': result['conn'], 'c': result['c'], 'keep_run': True}
                             for step in steps:
                                 if input_['keep_run'] == False:
                                     break
@@ -75,13 +77,13 @@ class Pipeline:
                     result['conn'].close()
 
     @staticmethod
-    def f_report_seed_generator(season, utils):  # 要在加檢查資料夾已有財報，若有完整財報則跳至PARSER步驟
+    def f_report_seed_generator(season, date_, utils):  # 要在加檢查資料夾已有財報，若有完整財報則跳至PARSER步驟
         year, season = season.split('-')
         month = year + '-' + str(int(season)*3)
-        input_ = {'month': month, 'conn': 'na', 'c': 'na2', 'keep_run': True}
+        input_ = {'month': month, 'update_date': date_, 'conn': 'na', 'c': 'na2', 'keep_run': True}
         input_ = Crawler().month_process(input_, utils)
         input_ = Parser().month_process(input_, utils)
-        seed = input_['data']['公司代號'].tolist()
+        seed = [tup[1] for tup in input_['data'].index]
         return seed
 
     @staticmethod
@@ -89,7 +91,7 @@ class Pipeline:
         new_seed = []
         try:
             for company in seed:
-                c.execute(f"SELECT 公司代號 FROM 'CASH_FLOW' WHERE 季別='{season}' AND 公司代號='{company}'")
+                c.execute(f"SELECT stockID FROM 'CASH_FLOW' WHERE 季別='{season}' AND stockID='{company}'")
                 if c.fetchone() == None:
                     new_seed.append(company)
         except sqlite3.OperationalError:

@@ -77,7 +77,7 @@ class Parser(Step):
             df_balance.columns = [0, 1]
             df_balance = utils.fr_fit_template(df_balance, balance_temp)
             utils.fr_bracket2neg(df_balance)
-            df_balance = utils.fr2my_sql_format(df_balance, input_['company'], input_['season'])
+            df_balance = utils.fr2my_sql_format(df_balance, input_['company'], input_['season'], input_['update_date'])
 
             # # income----------------------------------------------------------------------
             df_income = dfs[1].iloc[:, 1:3].astype(str)
@@ -85,7 +85,7 @@ class Parser(Step):
             df_income.columns = [0, 1]
             df_income = utils.fr_fit_template(df_income, income_temp)
             utils.fr_bracket2neg(df_income)
-            df_income = utils.fr2my_sql_format(df_income, input_['company'], input_['season'])
+            df_income = utils.fr2my_sql_format(df_income, input_['company'], input_['season'], input_['update_date'])
             #
             # # cash-flow:---------------------------------------------------------------------
             df_cash_flows = dfs[2].iloc[:, 1:3].astype(str)
@@ -93,7 +93,8 @@ class Parser(Step):
             df_cash_flows.columns = [0, 1]
             df_cash_flows = utils.fr_fit_template(df_cash_flows, cash_temp)
             utils.fr_bracket2neg(df_cash_flows)
-            df_cash_flows = utils.fr2my_sql_format(df_cash_flows, input_['company'], input_['season'])
+            df_cash_flows = utils.fr2my_sql_format(df_cash_flows, input_['company'],
+                                                   input_['season'], input_['update_date'])
 
         else:
             # balance----------------------------------------------------------------------
@@ -101,21 +102,22 @@ class Parser(Step):
             utils.fr_remain_ch(df_balance)
             df_balance.columns = [0, 1]
             df_balance = utils.fr_fit_template(df_balance, balance_temp)
-            df_balance = utils.fr2my_sql_format(df_balance, input_['company'], input_['season'])
+            df_balance = utils.fr2my_sql_format(df_balance, input_['company'], input_['season'], input_['update_date'])
 
             # income----------------------------------------------------------------------
             df_income = dfs[2].iloc[:,:2].astype(str)
             utils.fr_remain_ch(df_income)
             df_income.columns = [0, 1]
             df_income = utils.fr_fit_template(df_income, income_temp)
-            df_income = utils.fr2my_sql_format(df_income, input_['company'], input_['season'])
+            df_income = utils.fr2my_sql_format(df_income, input_['company'], input_['season'], input_['update_date'])
 
             # cash-flow:---------------------------------------------------------------------
             df_cash_flows = dfs[3].iloc[:,:2].astype(str)
             utils.fr_remain_ch(df_cash_flows)
             df_cash_flows.columns = [0, 1]
             df_cash_flows = utils.fr_fit_template(df_cash_flows, cash_temp)
-            df_cash_flows = utils.fr2my_sql_format(df_cash_flows, input_['company'], input_['season'])
+            df_cash_flows = utils.fr2my_sql_format(df_cash_flows, input_['company'],
+                                                   input_['season'], input_['update_date'])
 
         input_['data'] = [df_balance, df_income, df_cash_flows]
 
@@ -152,14 +154,16 @@ class Parser(Step):
 
             data_date.append(data_row)
 
-        new_label = ['商品', '法人', '交易多方口數', '交易多方金額', '交易空方口數', '交易空方金額', '交易淨額口數',
+        new_label = ['product', '法人', '交易多方口數', '交易多方金額', '交易空方口數', '交易空方金額', '交易淨額口數',
                      '交易淨額金額',
                      '未平倉多方口數', '未平倉多方金額', '未平倉空方口數', '未平倉空方金額', '未平倉淨額口數',
                      '未平倉淨額金額']
         df = pd.DataFrame(data_date)
         df.columns = new_label
-        df.insert(0, '日期', input_['date'])
-        df = df.set_index(['日期'])
+        df = df.iloc[:24]  # test only
+        df.insert(0, 'update_date', input_['date'])
+        df = df.set_index(['update_date', 'product', '法人'])
+        # input_['keep_run'] = False  # test only
         input_['data'] = df
         return input_
 

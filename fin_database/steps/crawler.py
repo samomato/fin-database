@@ -1,26 +1,30 @@
 import requests
 from time import sleep
+import random
 from fin_database.steps.step import Step
+from fin_database.settings import random_headers
 
 
 class Crawler(Step):
 
     def daily_process(self, input_, utils):
         date_ = input_['date'].replace('-', '')
+        header = random.choice(random_headers)
+        # print(header['User-Agent'])  # just for test
         url = f'''https://www.twse.com.tw/rwd/zh/afterTrading/
         MI_INDEX?date={date_}&type=ALLBUT0999&response=csv&_=1700894396517'''
         print(f"crawling {input_['date']} price data...")
         try:
-            r = requests.get(url, timeout=5)
+            r = requests.get(url, timeout=5, headers=header)
         except requests.exceptions.Timeout as err:
             print(err)
             sleep(60)
-            r = requests.get(url, timeout=5)
+            r = requests.get(url, timeout=5, headers=header)
         except requests.exceptions.ConnectionError:
             print('ConnectionError')
             print('try to wait 1 minute and retry...')
             sleep(60)
-            r = requests.get(url, timeout=5)
+            r = requests.get(url, timeout=5, headers=header)
         except Exception as e:
             print(e)
             print(f"other exception for {input_['date']}, please check")
@@ -44,19 +48,20 @@ class Crawler(Step):
         else:
             url_end = '_0'
             start_num = 2
+        header = random.choice(random_headers)
         url = f'https://mops.twse.com.tw/nas/t21/sii/t21sc03_{roc_year}_{month_}{url_end}.html'
         print(f"crawling {input_['month']} revenue data...")
         try:
-            r = requests.get(url, timeout=5)
+            r = requests.get(url, timeout=5, headers=header)
         except requests.exceptions.Timeout as err:
             print(err)
             sleep(60)
-            r = requests.get(url, timeout=5)
+            r = requests.get(url, timeout=5, headers=header)
         except requests.exceptions.ConnectionError:
             print('ConnectionError')
             print('try to wait 1 minute and retry...')
             sleep(60)
-            r = requests.get(url, timeout=5)
+            r = requests.get(url, timeout=5, headers=header)
         except Exception as e:
             print(e)
             print(f"other exception for {input_['month']}, please check")
@@ -74,11 +79,18 @@ class Crawler(Step):
         year, season = input_['season'].split('-')
         url = f'''https://mops.twse.com.tw/server-java/t164sb01?step=1&CO_ID={input_["company"]}&SYEAR={year}
             &SSEASON={season}&REPORT_ID'''
+        header = random.choice(random_headers)
         print(f"crawling {input_['season']} {input_['company']} financial report data...")
+        sleep(10)
+
         try:
-            print(f'start to request {input_["season"]} {input_["company"]}...')
-            r = requests.get(url+'=C', timeout=5)
-            print(len(r.text))
+            # print(f'start to request {input_["season"]} {input_["company"]}...')
+            r = requests.get(url+'=C', timeout=5, headers=header)
+            if len(r.text) == 564:
+                print('查詢過於頻繁！！')
+                sleep(60)
+                header = random.choice(random_headers)
+                r = requests.get(url + '=C', timeout=5, headers=header)
         except requests.exceptions.Timeout as err:
             print(err)
             sleep(60)
@@ -87,10 +99,9 @@ class Crawler(Step):
             print('ConnectionError')
             print('try to wait 1 minute and retry...')
             sleep(60)
-            r = requests.get(url+'=C')
+            r = requests.get(url+'=C', headers=header)
         except Exception as e:
             print(e)
-            r = [0 for i in range(152)]
             print(f"other exception for {input_['season']} {input_['company']}, please check")
             input_['keep_run'] = False
             return input_
@@ -98,21 +109,20 @@ class Crawler(Step):
         if len(r.text) < 4000:
             sleep(5)
             print(f'{input_["company"]} in {input_["season"]}無合併財報')
+            print(len(r.text))
             try:
-                r = requests.get(url+'=A', timeout=5)
-                print(len(r.text))
+                r = requests.get(url+'=A', timeout=5, headers=header)
             except requests.exceptions.Timeout as err:
                 print(err)
                 sleep(60)
-                r = requests.get(url + '=A')
+                r = requests.get(url + '=A', headers=header)
             except requests.exceptions.ConnectionError:
                 print('ConnectionError')
                 print('try to wait 1 minute and retry...')
                 sleep(60)
-                r = requests.get(url + '=A')
+                r = requests.get(url + '=A', headers=header)
             except Exception as e:
                 print(e)
-                r = [0 for i in range(152)]
                 print(f"other exception for {input_['season']} {input_['company']}, please check")
                 input_['keep_run'] = False
                 return input_
@@ -121,16 +131,16 @@ class Crawler(Step):
                 sleep(5)
                 print(f'{input_["company"]} in {input_["season"]}也無個別財報')
                 try:
-                    r = requests.get(url + '=B', timeout=5)
+                    r = requests.get(url + '=B', timeout=5, headers=header)
                 except requests.exceptions.Timeout as err:
                     print(err)
                     sleep(60)
-                    r = requests.get(url + '=B')
+                    r = requests.get(url + '=B', headers=header)
                 except requests.exceptions.ConnectionError:
                     print('ConnectionError')
                     print('try to wait 1 minute and retry...')
                     sleep(60)
-                    r = requests.get(url + '=B')
+                    r = requests.get(url + '=B', headers=header)
                 except Exception as e:
                     print(e)
                     print(f"other exception for {input_['season']} {input_['company']}, please check")
@@ -152,20 +162,26 @@ class Crawler(Step):
 
     def futures_process(self, input_, utils):
         year, month, day = input_['date'].split('-')
+        header = random.choice(random_headers)
         url = (f'https://www.taifex.com.tw/cht/3/futContractsDate?queryType=1&doQuery=1&queryDate'
                f'={year}%2F{month}%2F{day}')
         print(f"crawling {input_['date']} futures data...")
         try:
-            r = requests.get(url, timeout=5)
+            r = requests.get(url, timeout=5, headers=header)
         except requests.exceptions.Timeout as err:
             print(err)
-            sleep(30)
-            r = requests.get(url)
+            sleep(60)
+            header = random.choice(random_headers)
+            r = requests.get(url, headers=header)
         except requests.exceptions.ConnectionError:
             print('ConnectionError')
-            print('try to wait 0.5 minute and retry...')
-            sleep(30)
-            r = requests.get(url)
+            print('try to wait 1 minute and retry...')
+            sleep(60)
+            r = requests.get(url, headers=header)
+
+        if r.text == '':
+            print(f'No data for {input_["date"]}. It may be Taiwan Holiday.')
+            input_['keep_run'] = False
 
         if r.status_code == requests.codes.ok:
             input_['data'] = r
