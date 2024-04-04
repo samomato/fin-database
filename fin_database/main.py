@@ -3,12 +3,13 @@ from fin_database.pipeline import Pipeline
 
 
 def main():
-    date_start = date(2024, 3, 19)
-    date_end = date(2024, 3, 22)
-    dtype = 'daily'
+    date_start = date(1999, 1, 1)
+    date_end = date(2024, 4, 10)
+    # dtype = 'daily'
     # dtype = 'month'
     # dtype = 'f_report'
     # dtype = 'futures'
+    dtype = 'taiex'
     Pipeline().produce(date_start, date_end, dtype)
 
 

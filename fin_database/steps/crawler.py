@@ -205,5 +205,63 @@ class Crawler(Step):
 
         return input_
 
+    def taiex_process(self, input_, utils):
+        year, month, day = str(input_['month']).split('-')
+        header = random.choice(random_headers)
+        url = (f'https://www.twse.com.tw/rwd/zh/TAIEX/MI_5MINS_HIST?date={year + month}01&response=csv&_=1711551721071')
+        print(f"crawling {input_['month']} taiex data...")
+
+        try:
+            r = requests.get(url, timeout=5, headers=header)
+        except requests.exceptions.Timeout as err:
+            print(err)
+            sleep(60)
+            header = random.choice(random_headers)
+            r = requests.get(url, headers=header)
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError')
+            print('try to wait 1 minute and retry...')
+            sleep(60)
+            r = requests.get(url, headers=header)
+        if r.text == '':
+            print(f'No data for {input_["month"]}. It may be the future.')
+            input_['keep_run'] = False
+
+        if r.status_code == requests.codes.ok:
+            input_['data'] = r
+        else:
+            input_['keep_run'] = False
+            print(input_['month'], 'futures request fail')
+
+        return input_
 
 
+    def tw50i_process(self, input_, utils):
+        year, month, day = str(input_['month']).split('-')
+        header = random.choice(random_headers)
+        url = (f'https://www.twse.com.tw/rwd/zh/FTSE/TAI50I?date={year + month}01&response=csv&_=1712163756653')
+        print(f"crawling {input_['month']} tw50 INDEX data...")
+
+        try:
+            r = requests.get(url, timeout=5, headers=header)
+        except requests.exceptions.Timeout as err:
+            print(err)
+            sleep(60)
+            header = random.choice(random_headers)
+            r = requests.get(url, headers=header)
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError')
+            print('try to wait 1 minute and retry...')
+            sleep(60)
+            r = requests.get(url, headers=header)
+        if r.text == '':
+            print(f'No data for {input_["month"]}. It may be the future.')
+            input_['keep_run'] = False
+
+        if r.status_code == requests.codes.ok:
+            input_['data'] = r
+        else:
+            input_['keep_run'] = False
+            print(input_['month'], 'futures request fail')
+
+        return input_

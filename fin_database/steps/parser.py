@@ -167,3 +167,30 @@ class Parser(Step):
         input_['data'] = df
         return input_
 
+    def taiex_process(self, input_, utils):
+        print(f'Parsing taiex of {input_["month"]}...')
+        lines = input_['data'].text.split('\r\n')
+        pre_df = []
+        for line in lines:
+            contents = line.split('",')
+            new = [c.replace('"', '') for c in contents]
+            pre_df.append(new[:-1])
+
+        df = pd.DataFrame(pre_df[2:-1])
+        df.columns = ['update_date', '開盤', '最高', '最低', '收盤']
+        df.iloc[:, 1:] = df.iloc[:, 1:].apply(lambda s: s.str.replace(',', ''))
+        df.iloc[:, 0] = df.iloc[:, 0].apply(lambda s: str(int(s.split('/')[0])+1911)+'-'+s.split('/')[1]+'-'+s.split('/')[2])
+        df = df.set_index('update_date')
+        input_['data'] = df
+        return input_
+
+    def tw50i_process(self, input_, utils):
+        print(f'Parsing taiex of {input_["month"]}...')
+        lines = input_['data'].text.split('\r\n')
+        pre_df = []
+        for line in lines:
+            contents = line.split('",')
+            new = [c.replace('"', '') for c in contents]
+            pre_df.append(new[:-1])
+
+        df = pd.DataFrame(pre_df[2:-1])

@@ -70,7 +70,18 @@ def main():
     data = Data()
     # print(data.get('成交筆數', 3))
     # print(data.get('交易多方口數', 3))
-    print(data.get('light_score', 13))
+    # print(data.get('存貨', 2))
+    research = data.get('研究發展費用', 1)
+    con1 = research.iloc[-1]>1000000
+    print(con1)
+    instock = data.get('存貨增加減少', 1)
+    con2 = instock.iloc[-1] < 0
+    print(con2)
+    con = con1 & con2
+    print(con)
+    print(con[con])
+    # print(data.cn2table)
+    # print(data.get('light_score', 13))
 
 
 if __name__ == '__main__':

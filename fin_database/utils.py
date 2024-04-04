@@ -1,5 +1,6 @@
 from datetime import timedelta
 from datetime import date
+import sqlite3
 import os
 import re
 
@@ -15,14 +16,14 @@ class Utils:
             date_list.append(date_start.isoformat())
         return date_list
 
-    def calculate_month_period(self, date_start, date_end):
+    def calculate_month_period(self, date_start, date_end, update_date):
         period = (date_end - date_start).days
         delta = timedelta(days=1)
         today = date.today()
         # month_list = []
         update_list =[]
         for _ in range(int(period)+1):
-            if date_start.day == 10:
+            if date_start.day == update_date:
                 update_list.append(date_start)
                 # month_list.append((date_start - timedelta(days=30)).strftime('%Y-%m'))
             date_start = date_start + delta
@@ -102,3 +103,19 @@ class Utils:
     @staticmethod
     def check_file_exist(file):
         return os.path.isfile(file)
+
+    @staticmethod
+    def drop_duplicate_in_db(db_directory, db_file_name, table_):
+        db_path = os.path.join(db_directory, db_file_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.execute(f"CREATE TABLE temp_table as SELECT DISTINCT * FROM {table_}")
+        conn.commit()
+        c.execute(f"DELETE FROM {table_}")
+        conn.commit()
+        c.execute(f"INSERT INTO {table_} SELECT * FROM temp_table")
+        conn.commit()
+        c.execute("DROP TABLE temp_table")
+        conn.commit()
+        conn.close()
+        return

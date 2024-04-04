@@ -1,6 +1,7 @@
 import os.path
 from datetime import timedelta
 from datetime import datetime
+from datetime import date
 import pandas as pd
 
 # from fin_database.steps.step import Step
@@ -48,7 +49,7 @@ class PreCheck():
 
     @staticmethod
     def month_check(date_start, date_end, utils):
-        update_list = utils.calculate_month_period(date_start, date_end)
+        update_list = utils.calculate_month_period(date_start, date_end, 10)
         # print(update_list)  # just for test
         utils.make_dir(db_dir)
         db_path = os.path.join(db_dir, db_name)
@@ -163,6 +164,106 @@ class PreCheck():
             keep_run = True
         output = {
             'date_list': new_date_list,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+        return output
+
+    @staticmethod
+    def taiex_check(date_start, date_end, utils):
+        url_month_list = utils.calculate_month_period(date_start, date_end, 1)
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='TAIEX'; ").fetchall()
+        if not list_tables:
+            c.execute(f'CREATE TABLE TAIEX ("update_date" "TIMESTAMP")')
+            c.execute('CREATE INDEX "ix_TAIEX_update_date" on TAIEX(update_date)')
+            conn.commit()
+
+        newest_month = date.today()
+        new_month_list = []
+        for update in url_month_list:
+            if update.year < 1999:
+                continue
+            cursor = c.execute(f"SELECT * FROM TAIEX WHERE update_date='{update}';")
+            if cursor.fetchone() is None:
+                update1 = update + timedelta(days=2)
+                print(update1)  # for test only
+                cursor = c.execute(f"SELECT * FROM TAIEX WHERE update_date='{update1}';")
+                if cursor.fetchone() is None:
+                    update2 = update1 + timedelta(days=7)
+                    cursor = c.execute(f"SELECT * FROM TAIEX WHERE update_date='{update2}';")
+                    if cursor.fetchone() is None:
+                        new_month_list.append(update)
+                    else:
+                        print(update2, 'already exist in TAIEX Table of DB')
+                else:
+                    print(update1, 'already exist in TAIEX Table of DB')
+            else:
+                print(update, 'already exist in TAIEX Table of DB')
+
+        if newest_month.strftime("%Y-%m") == url_month_list[-1].strftime("%Y-%m"):
+            new_month_list.append(newest_month)
+
+        if not new_month_list:
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'month_list': new_month_list,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+        return output
+
+    @staticmethod
+    def tw50i_check(date_start, date_end, utils):
+        url_month_list = utils.calculate_month_period(date_start, date_end, 1)
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='TW50I'; ").fetchall()
+        if not list_tables:
+            c.execute(f'CREATE TABLE TW50I ("update_date" "TIMESTAMP")')
+            c.execute('CREATE INDEX "ix_TW50I_update_date" on TW50I(update_date)')
+            conn.commit()
+
+        newest_month = date.today()
+        new_month_list = []
+        for update in url_month_list:
+            if update.year < 2003:
+                continue
+            cursor = c.execute(f"SELECT * FROM TW50I WHERE update_date='{update}';")
+            if cursor.fetchone() is None:
+                update1 = update + timedelta(days=2)
+                print(update1)  # for test only
+                cursor = c.execute(f"SELECT * FROM TW50I WHERE update_date='{update1}';")
+                if cursor.fetchone() is None:
+                    update2 = update1 + timedelta(days=7)
+                    cursor = c.execute(f"SELECT * FROM TW50I WHERE update_date='{update2}';")
+                    if cursor.fetchone() is None:
+                        new_month_list.append(update)
+                    else:
+                        print(update2, 'already exist in TW50I Table of DB')
+                else:
+                    print(update1, 'already exist in TW50I Table of DB')
+            else:
+                print(update, 'already exist in TW50I Table of DB')
+
+        if newest_month.strftime("%Y-%m") == url_month_list[-1].strftime("%Y-%m"):
+            new_month_list.append(newest_month)
+
+        if not new_month_list:
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'month_list': new_month_list,
             'keep_run': keep_run,
             'conn': conn,
             'c': c,

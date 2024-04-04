@@ -1,4 +1,5 @@
 from fin_database.steps.step import Step
+from fin_database.settings import db_dir, db_name, f_report_dir
 
 
 class Storer(Step):
@@ -85,5 +86,21 @@ class Storer(Step):
                     print(f'Add new column {cn} to DB from {input_["date"]}')
             input_['conn'].commit()
         input_['data'].to_sql('FUTURES', input_['conn'], if_exists='append')
+
+        return
+
+    def taiex_process(self, input_, utils):
+        cn_list = ['update_date']
+        [cn_list.append(_) for _ in input_['data'].columns]
+        input_['c'].execute('PRAGMA TABLE_INFO(TAIEX)')
+        columns_of_tables = [tup[1] for tup in input_['c'].fetchall()]
+        if cn_list != columns_of_tables:
+            for cn in cn_list:
+                if cn not in columns_of_tables:
+                    input_['c'].execute(f"ALTER TABLE 'TAIEX' ADD COLUMN '{cn}' 'REAL'")
+                    print(f'Add new column {cn} to DB from {input_["month"]}')
+            input_['conn'].commit()
+        input_['data'].to_sql('TAIEX', input_['conn'], if_exists='append')
+        utils.drop_duplicate_in_db(db_dir, db_name, 'TAIEX')
 
         return
