@@ -221,6 +221,56 @@ class PreCheck():
         return output
 
     @staticmethod
+    def taiex_tr_check(date_start, date_end, utils):
+        url_month_list = utils.calculate_month_period(date_start, date_end, 1)
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='TAIEX_TR'; ").fetchall()
+        if not list_tables:
+            c.execute(f'CREATE TABLE TAIEX_TR ("update_date" "TIMESTAMP")')
+            c.execute('CREATE INDEX "ix_TAIEX_TR_update_date" on TAIEX_TR(update_date)')
+            conn.commit()
+
+        newest_month = date.today()
+        new_month_list = []
+        for update in url_month_list:
+            if update.year < 2003:
+                continue
+            cursor = c.execute(f"SELECT * FROM TAIEX_TR WHERE update_date='{update}';")
+            if cursor.fetchone() is None:
+                update1 = update + timedelta(days=2)
+                print(update1)  # for test only
+                cursor = c.execute(f"SELECT * FROM TAIEX_TR WHERE update_date='{update1}';")
+                if cursor.fetchone() is None:
+                    update2 = update1 + timedelta(days=7)
+                    cursor = c.execute(f"SELECT * FROM TAIEX_TR WHERE update_date='{update2}';")
+                    if cursor.fetchone() is None:
+                        new_month_list.append(update)
+                    else:
+                        print(update2, 'already exist in TAIEX_TR Table of DB')
+                else:
+                    print(update1, 'already exist in TAIEX_TR Table of DB')
+            else:
+                print(update, 'already exist in TAIEX_TR Table of DB')
+
+        if newest_month.strftime("%Y-%m") == url_month_list[-1].strftime("%Y-%m"):
+            new_month_list.append(newest_month)
+
+        if not new_month_list:
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'month_list': new_month_list,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+        return output
+
+    @staticmethod
     def tw50i_check(date_start, date_end, utils):
         url_month_list = utils.calculate_month_period(date_start, date_end, 1)
         utils.make_dir(db_dir)
@@ -268,4 +318,89 @@ class PreCheck():
             'conn': conn,
             'c': c,
         }
+        return output
+
+
+    @staticmethod
+    def tw100i_check(date_start, date_end, utils):
+        url_month_list = utils.calculate_month_period(date_start, date_end, 1)
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='TW100I'; ").fetchall()
+        if not list_tables:
+            c.execute(f'CREATE TABLE TW100I ("update_date" "TIMESTAMP")')
+            c.execute('CREATE INDEX "ix_TW100I_update_date" on TW100I(update_date)')
+            conn.commit()
+
+        newest_month = date.today()
+        new_month_list = []
+        for update in url_month_list:
+            if update.year < 2005:
+                continue
+            cursor = c.execute(f"SELECT * FROM TW100I WHERE update_date='{update}';")
+            if cursor.fetchone() is None:
+                update1 = update + timedelta(days=2)
+                print(update1)  # for test only
+                cursor = c.execute(f"SELECT * FROM TW100I WHERE update_date='{update1}';")
+                if cursor.fetchone() is None:
+                    update2 = update1 + timedelta(days=7)
+                    cursor = c.execute(f"SELECT * FROM TW100I WHERE update_date='{update2}';")
+                    if cursor.fetchone() is None:
+                        new_month_list.append(update)
+                    else:
+                        print(update2, 'already exist in TW100I Table of DB')
+                else:
+                    print(update1, 'already exist in TW100I Table of DB')
+            else:
+                print(update, 'already exist in TW100I Table of DB')
+
+        if newest_month.strftime("%Y-%m") == url_month_list[-1].strftime("%Y-%m"):
+            new_month_list.append(newest_month)
+
+        if not new_month_list:
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'month_list': new_month_list,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+        return output
+
+    @staticmethod
+    def sp500tr_check(date_start, date_end, utils):
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='SP500TR'; ").fetchall()
+        if not list_tables:
+            c.execute(f'CREATE TABLE SP500TR ("update_date" "TIMESTAMP")')
+            c.execute('CREATE INDEX "ix_SP500TR_update_date" on SP500TR(update_date)')
+            conn.commit()
+
+        if date_start.year < 2003:
+            print('have no SP500-TR data before 2003')
+            date_start = date(2003, 1, 1)
+
+        if date_end.year < 2003:
+            print('have no SP500-TR data before 2003')
+            date_end = date(2003, 1, 2)
+
+        if date_start > date.today():
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'date_start': date_start,
+            'date_end': date_end,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+
         return output

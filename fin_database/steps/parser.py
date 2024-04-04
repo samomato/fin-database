@@ -48,7 +48,7 @@ class Parser(Step):
         new_label = []
 
         for i in range(len(df.columns)):
-            new_label.append(df.columns[i][1].replace(' ',''))
+            new_label.append(df.columns[i][1].replace(' ', '').replace('%', 'pct'))
 
         df.columns = new_label
         if input_['roc_year'] < 102:
@@ -60,6 +60,8 @@ class Parser(Step):
         df.insert(1, '月份', input_['month'])
         df = df.set_index(['update_date', 'stockID'])
         input_['data'] = df
+        print(df.columns)
+        # input_['keep_run'] = False  # test only
         return input_
 
     def f_report_process(self, input_, utils):
@@ -177,15 +179,15 @@ class Parser(Step):
             pre_df.append(new[:-1])
 
         df = pd.DataFrame(pre_df[2:-1])
-        df.columns = ['update_date', '開盤', '最高', '最低', '收盤']
+        df.columns = ['update_date', 'taiex開盤', 'taiex最高', 'taiex最低', 'taiex收盤']
         df.iloc[:, 1:] = df.iloc[:, 1:].apply(lambda s: s.str.replace(',', ''))
         df.iloc[:, 0] = df.iloc[:, 0].apply(lambda s: str(int(s.split('/')[0])+1911)+'-'+s.split('/')[1]+'-'+s.split('/')[2])
         df = df.set_index('update_date')
         input_['data'] = df
         return input_
 
-    def tw50i_process(self, input_, utils):
-        print(f'Parsing taiex of {input_["month"]}...')
+    def taiex_tr_process(self, input_, utils):
+        print(f'Parsing taiex return of {input_["month"]}...')
         lines = input_['data'].text.split('\r\n')
         pre_df = []
         for line in lines:
@@ -194,3 +196,45 @@ class Parser(Step):
             pre_df.append(new[:-1])
 
         df = pd.DataFrame(pre_df[2:-1])
+        df.columns = ['update_date', 'taiex-tr']
+        df.iloc[:, 1:] = df.iloc[:, 1:].apply(lambda s: s.str.replace(',', ''))
+        df.iloc[:, 0] = df.iloc[:, 0].apply(lambda s: str(int(s.split('/')[0])+1911)+'-'+s.split('/')[1]+'-'+s.split('/')[2])
+        df = df.set_index('update_date')
+        input_['data'] = df
+        return input_
+
+    def tw50i_process(self, input_, utils):
+        print(f'Parsing tw50i of {input_["month"]}...')
+        lines = input_['data'].text.split('\r\n')
+        pre_df = []
+        for line in lines:
+            contents = line.split('",')
+            new = [c.replace('"', '') for c in contents]
+            pre_df.append(new[:-1])
+
+        df = pd.DataFrame(pre_df[2:-1])
+        df.columns = ['update_date', 'tw50i', 'tw50i_re']
+        df.iloc[:, 1:] = df.iloc[:, 1:].apply(lambda s: s.str.replace(',', ''))
+        df.iloc[:, 0] = df.iloc[:, 0].apply(lambda s: str(int(s.split('/')[0])+1911)+'-'+s.split('/')[1]+'-'+s.split('/')[2])
+        df = df.set_index('update_date')
+        # print(df)
+        input_['data'] = df
+        return input_
+
+    def tw100i_process(self, input_, utils):
+        print(f'Parsing tw100i of {input_["month"]}...')
+        lines = input_['data'].text.split('\r\n')
+        pre_df = []
+        for line in lines:
+            contents = line.split('",')
+            new = [c.replace('"', '') for c in contents]
+            pre_df.append(new[:-1])
+
+        df = pd.DataFrame(pre_df[2:-1])
+        df.columns = ['update_date', 'tw100i', 'tw100i_re']
+        df.iloc[:, 1:] = df.iloc[:, 1:].apply(lambda s: s.str.replace(',', ''))
+        df.iloc[:, 0] = df.iloc[:, 0].apply(lambda s: str(int(s.split('/')[0])+1911)+'-'+s.split('/')[1]+'-'+s.split('/')[2])
+        df = df.set_index('update_date')
+        # print(df)
+        input_['data'] = df
+        return input_

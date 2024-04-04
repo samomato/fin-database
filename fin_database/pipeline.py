@@ -89,8 +89,22 @@ class Pipeline:
                         sleep(10)
                     result['conn'].close()
 
+            case 'taiex_tr':
+                result = PreCheck().taiex_tr_check(date_start, date_end, utils)
+                if result['keep_run'] == True:
+                    steps = [Crawler(), Parser(), Storer()]
+                    for month in result['month_list']:
+                        input_ = {'month': month, 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
+                        for step in steps:
+                            if input_['keep_run'] == False:
+                                break
+                            input_ = step.taiex_tr_process(input_, utils)
+
+                        sleep(10)
+                    result['conn'].close()
+
             case 'tw50i':
-                result = PreCheck().taiex_check(date_start, date_end, utils)
+                result = PreCheck().tw50i_check(date_start, date_end, utils)
                 if result['keep_run'] == True:
                     steps = [Crawler(), Parser(), Storer()]
                     for month in result['month_list']:
@@ -103,6 +117,32 @@ class Pipeline:
                         sleep(10)
                     result['conn'].close()
 
+            case 'tw100i':
+                result = PreCheck().tw100i_check(date_start, date_end, utils)
+                if result['keep_run'] == True:
+                    steps = [Crawler(), Parser(), Storer()]
+                    for month in result['month_list']:
+                        input_ = {'month': month, 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
+                        for step in steps:
+                            if input_['keep_run'] == False:
+                                break
+                            input_ = step.tw100i_process(input_, utils)
+
+                        sleep(10)
+                    result['conn'].close()
+
+            case 'sp500tr':
+                result = PreCheck().sp500tr_check(date_start, date_end, utils)
+                if result['keep_run'] == True:
+                    steps = [Crawler(), Parser(), Storer()]
+                    input_ = {'date_start': result['date_start'], 'date_end': result['date_end'], 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
+                    for step in steps:
+                        if input_['keep_run'] == False:
+                            break
+                        input_ = step.sp500tr_process(input_, utils)
+
+                        sleep(10)
+                    result['conn'].close()
 
     @staticmethod
     def f_report_seed_generator(season, date_, utils):  # 要在加檢查資料夾已有財報，若有完整財報則跳至PARSER步驟

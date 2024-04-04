@@ -235,6 +235,35 @@ class Crawler(Step):
 
         return input_
 
+    def taiex_tr_process(self, input_, utils):
+        year, month, day = str(input_['month']).split('-')
+        header = random.choice(random_headers)
+        url = (f'https://www.twse.com.tw/rwd/zh/TAIEX/MFI94U?date={year + month}01&response=csv&_=1712216964306')
+        print(f"crawling {input_['month']} taiex-return data...")
+
+        try:
+            r = requests.get(url, timeout=5, headers=header)
+        except requests.exceptions.Timeout as err:
+            print(err)
+            sleep(60)
+            header = random.choice(random_headers)
+            r = requests.get(url, headers=header)
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError')
+            print('try to wait 1 minute and retry...')
+            sleep(60)
+            r = requests.get(url, headers=header)
+        if r.text == '':
+            print(f'No data for {input_["month"]}. It may be the future.')
+            input_['keep_run'] = False
+
+        if r.status_code == requests.codes.ok:
+            input_['data'] = r
+        else:
+            input_['keep_run'] = False
+            print(input_['month'], 'futures request fail')
+
+        return input_
 
     def tw50i_process(self, input_, utils):
         year, month, day = str(input_['month']).split('-')
@@ -264,4 +293,64 @@ class Crawler(Step):
             input_['keep_run'] = False
             print(input_['month'], 'futures request fail')
 
+        return input_
+
+    def tw100i_process(self, input_, utils):
+        year, month, day = str(input_['month']).split('-')
+        header = random.choice(random_headers)
+        url = (f'https://www.twse.com.tw/rwd/zh/FTSE/TAI100I?date={year + month}01&response=csv&_=1712163756653')
+        print(f"crawling {input_['month']} tw100 INDEX data...")
+
+        try:
+            r = requests.get(url, timeout=5, headers=header)
+        except requests.exceptions.Timeout as err:
+            print(err)
+            sleep(60)
+            header = random.choice(random_headers)
+            r = requests.get(url, headers=header)
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError')
+            print('try to wait 1 minute and retry...')
+            sleep(60)
+            r = requests.get(url, headers=header)
+        if r.text == '':
+            print(f'No data for {input_["month"]}. It may be the future.')
+            input_['keep_run'] = False
+
+        if r.status_code == requests.codes.ok:
+            input_['data'] = r
+        else:
+            input_['keep_run'] = False
+            print(input_['month'], 'futures request fail')
+
+        return input_
+
+    def sp500tr_process(self, input_, utils):
+        start_year = input_['date_start'].year
+        start_month = input_['date_start'].strftime('%b')
+        print(start_month)
+        start_date = input_['date_start'].strftime('%d')
+        print(start_date)
+        end_year = input_['date_end'].year
+        end_month = input_['date_end'].strftime('%b')
+        end_date = input_['date_end'].strftime('%d')
+        # header = random.choice(random_headers)
+        url = (f'https://seekingalpha.com/api/v3/historical_prices?filter[ticker][slug]=sp500tr'
+               f'&&filter[as_of_date][gte]=%20{start_month}%20{start_date}%20{start_year}'
+               f'&filter[as_of_date][lte]=%20{end_month}%20{end_date}%20{end_year}&sort=as_of_date')
+
+        header = {
+            'authority': 'www.google.com',
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'accept-language': 'en-US,en;q=0.9',
+            'cache-control': 'max-age=0',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+            # Add more headers as needed
+        }
+
+        print(url)
+        r = requests.get(url, timeout=5, headers=header)
+        print(r.status_code)
+        print(r.text)
+        input_['keep_run'] = False
         return input_
