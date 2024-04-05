@@ -119,3 +119,4 @@ class Utils:
         conn.commit()
         conn.close()
         return
+

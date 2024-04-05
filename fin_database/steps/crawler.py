@@ -1,6 +1,8 @@
 import requests
 from time import sleep
 import random
+import json
+from bs4 import BeautifulSoup
 from fin_database.steps.step import Step
 from fin_database.settings import random_headers
 
@@ -334,23 +336,31 @@ class Crawler(Step):
         end_year = input_['date_end'].year
         end_month = input_['date_end'].strftime('%b')
         end_date = input_['date_end'].strftime('%d')
-        # header = random.choice(random_headers)
+        header = random.choice(random_headers)
         url = (f'https://seekingalpha.com/api/v3/historical_prices?filter[ticker][slug]=sp500tr'
                f'&&filter[as_of_date][gte]=%20{start_month}%20{start_date}%20{start_year}'
                f'&filter[as_of_date][lte]=%20{end_month}%20{end_date}%20{end_year}&sort=as_of_date')
 
-        header = {
-            'authority': 'www.google.com',
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'accept-language': 'en-US,en;q=0.9',
-            'cache-control': 'max-age=0',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
-            # Add more headers as needed
-        }
-
-        print(url)
+        header['authority'] = 'seekingalpha.com'
+        header['accept-language'] = 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7'
+        header['accept'] = '*/*'
+        header['cache-control'] = 'no-cache'
+        header['Accept-Encoding'] = 'gzip, deflate, br, zstd'
+        header['Referer'] = random.choice(['www.google.com', 'https://tw.stock.yahoo.com/markets', 'https://seekingalpha.com/'])
+        # print(header, '\n')
         r = requests.get(url, timeout=5, headers=header)
-        print(r.status_code)
-        print(r.text)
+        r = r.text
+
+        print(r)
+        r = json.loads(r)
+        sp500tr = []
+        update_dates =[]
+        for single_date_info in r['data']:
+            sp500tr.append(single_date_info['attributes']['close'])
+            update_dates.append(single_date_info['attributes']['as_of_date'])
+
+        print(sp500tr)
+        print(update_dates)
         input_['keep_run'] = False
+
         return input_
