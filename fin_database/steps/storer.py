@@ -112,7 +112,6 @@ class Storer(Step):
             for cn in cn_list:
                 if cn not in columns_of_tables:
                     input_['c'].execute(f"ALTER TABLE 'TAIEX_TR' ADD COLUMN '{cn}' 'REAL'")
-                    print(f'Add new column {cn} to DB from {input_["month"]}')
             input_['conn'].commit()
         input_['data'].to_sql('TAIEX_TR', input_['conn'], if_exists='append')
         utils.drop_duplicate_in_db(db_dir, db_name, 'TAIEX_TR')
@@ -127,7 +126,6 @@ class Storer(Step):
             for cn in cn_list:
                 if cn not in columns_of_tables:
                     input_['c'].execute(f"ALTER TABLE 'TW50I' ADD COLUMN '{cn}' 'REAL'")
-                    print(f'Add new column {cn} to DB from {input_["month"]}')
             input_['conn'].commit()
         input_['data'].to_sql('TW50I', input_['conn'], if_exists='append')
         utils.drop_duplicate_in_db(db_dir, db_name, 'TW50I')
@@ -142,8 +140,49 @@ class Storer(Step):
             for cn in cn_list:
                 if cn not in columns_of_tables:
                     input_['c'].execute(f"ALTER TABLE 'TW100I' ADD COLUMN '{cn}' 'REAL'")
-                    print(f'Add new column {cn} to DB from {input_["month"]}')
             input_['conn'].commit()
         input_['data'].to_sql('TW100I', input_['conn'], if_exists='append')
         utils.drop_duplicate_in_db(db_dir, db_name, 'TW100I')
+        return 0
+
+    def sp500tr_process(self, input_, utils):
+        cn_list = ['update_date']
+        [cn_list.append(_) for _ in input_['data'].columns]
+        input_['c'].execute('PRAGMA TABLE_INFO(SP500TR)')
+        columns_of_tables = [tup[1] for tup in input_['c'].fetchall()]
+        if cn_list != columns_of_tables:
+            for cn in cn_list:
+                if cn not in columns_of_tables:
+                    input_['c'].execute(f"ALTER TABLE 'SP500TR' ADD COLUMN '{cn}' 'REAL'")
+            input_['conn'].commit()
+        input_['data'].to_sql('SP500TR', input_['conn'], if_exists='append')
+        utils.drop_duplicate_in_db(db_dir, db_name, 'SP500TR')
+        return 0
+
+    def vti_process(self, input_, utils):
+        cn_list = ['update_date']
+        [cn_list.append(_) for _ in input_['data'].columns]
+        input_['c'].execute('PRAGMA TABLE_INFO(VTI)')
+        columns_of_tables = [tup[1] for tup in input_['c'].fetchall()]
+        if cn_list != columns_of_tables:
+            for cn in cn_list:
+                if cn not in columns_of_tables:
+                    input_['c'].execute(f"ALTER TABLE 'VTI' ADD COLUMN '{cn}' 'REAL'")
+            input_['conn'].commit()
+        input_['data'].to_sql('VTI', input_['conn'], if_exists='append')
+        utils.drop_duplicate_in_db(db_dir, db_name, 'VTI')
+        return 0
+
+    def vix_process(self, input_, utils):
+        cn_list = ['update_date']
+        [cn_list.append(_) for _ in input_['data'].columns]
+        input_['c'].execute('PRAGMA TABLE_INFO(VIX)')
+        columns_of_tables = [tup[1] for tup in input_['c'].fetchall()]
+        if cn_list != columns_of_tables:
+            for cn in cn_list:
+                if cn not in columns_of_tables:
+                    input_['c'].execute(f"ALTER TABLE 'VIX' ADD COLUMN '{cn}' 'REAL'")
+            input_['conn'].commit()
+        input_['data'].to_sql('VIX', input_['conn'], if_exists='append')
+        utils.drop_duplicate_in_db(db_dir, db_name, 'VIX')
         return 0

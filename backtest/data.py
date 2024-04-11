@@ -52,16 +52,17 @@ class Data:
                 WHERE update_date BETWEEN '{end_str}' AND '{start_str}'""")
                 take = pd.read_sql(s, self.conn, parse_dates=['update_date']).pivot(index='update_date', columns=('product', '法人'))[cn_name]
 
-            elif self.cn2table[cn_name] == 'LIGHT':
-                s = (f"""SELECT update_date, {cn_name} FROM {self.cn2table[cn_name]} 
-                WHERE update_date BETWEEN '{end_str}' AND '{start_str}'""")
-                take = pd.read_sql(s, self.conn, parse_dates=['update_date']).set_index('update_date')
-
-            else:
+            elif self.cn2table[cn_name] in {'BALANCE', 'CASH_FLOW', 'INCOME', 'DAILY'}:
 
                 s = (f"""SELECT stockID, update_date, {cn_name} FROM {self.cn2table[cn_name]} 
                 WHERE update_date BETWEEN '{end_str}' AND '{start_str}'""")
                 take = pd.read_sql(s, self.conn, parse_dates=['update_date']).pivot(index='update_date', columns='stockID')[cn_name]
+
+            # elif self.cn2table[cn_name] == 'LIGHT':
+            else:
+                s = (f"""SELECT update_date, {cn_name} FROM {self.cn2table[cn_name]} 
+                WHERE update_date BETWEEN '{end_str}' AND '{start_str}'""")
+                take = pd.read_sql(s, self.conn, parse_dates=['update_date']).set_index('update_date')
 
             return take
 

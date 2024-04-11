@@ -383,13 +383,13 @@ class PreCheck():
             c.execute('CREATE INDEX "ix_SP500TR_update_date" on SP500TR(update_date)')
             conn.commit()
 
-        if date_start.year < 2003:
-            print('have no SP500-TR data before 2003')
-            date_start = date(2003, 1, 1)
+        if date_start.year < 2012:
+            print('have no SP500TR data before 2003')
+            date_start = date(2012, 2, 28)
 
-        if date_end.year < 2003:
-            print('have no SP500-TR data before 2003')
-            date_end = date(2003, 1, 2)
+        if date_end.year < 2012:
+            print('have no SP500TR data before 2003')
+            date_end = date(2012, 2, 29)
 
         if date_start > date.today():
             keep_run = False
@@ -402,5 +402,70 @@ class PreCheck():
             'conn': conn,
             'c': c,
         }
+        return output
 
+    @staticmethod
+    def vti_check(date_start, date_end, utils):
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='VTI'; ").fetchall()
+        if not list_tables:
+            c.execute(f'CREATE TABLE VTI ("update_date" "TIMESTAMP")')
+            c.execute('CREATE INDEX "ix_VTI_update_date" on VTI(update_date)')
+            conn.commit()
+
+        if date_start.year < 2012:
+            print('have no VTI data before 2003')
+            date_start = date(2012, 3, 2)
+
+        if date_end.year < 2012:
+            print('have no SP500-TR data before 2003')
+            date_end = date(2012, 3, 2)
+
+        if date_start > date.today():
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'date_start': date_start,
+            'date_end': date_end,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
+        return output
+
+    @staticmethod
+    def vix_check(date_start, date_end, utils):
+        utils.make_dir(db_dir)
+        db_path = os.path.join(db_dir, db_name)
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        list_tables = c.execute(f"SELECT name FROM sqlite_master  WHERE type='table' AND name='VIX'; ").fetchall()
+        if not list_tables:
+            c.execute(f'CREATE TABLE VIX ("update_date" "TIMESTAMP")')
+            c.execute('CREATE INDEX "ix_VIX_update_date" on VIX(update_date)')
+            conn.commit()
+
+        if date_start.year < 2003:
+            print('have no VIX data before 2003')
+            date_start = date(2003, 1, 6)
+
+        if date_end.year < 2003:
+            print('have no SP500-TR data before 2003')
+            date_end = date(2003, 1, 7)
+
+        if date_start > date.today():
+            keep_run = False
+        else:
+            keep_run = True
+        output = {
+            'date_start': date_start,
+            'date_end': date_end,
+            'keep_run': keep_run,
+            'conn': conn,
+            'c': c,
+        }
         return output

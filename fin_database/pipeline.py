@@ -49,7 +49,7 @@ class Pipeline:
                         seed = self.f_report_seed_generator(season, date_, utils)
                         seed = self.company_need_process(season, seed, result['c'])
                         # print(season, '\n', date_)
-                        # seed = ['2330']  # for test only
+                        # seed = ['3454']  # for test only
                         for company in seed:
 
                             input_ = {'season': season, 'update_date': date_, 'company': company,
@@ -140,8 +140,28 @@ class Pipeline:
                         if input_['keep_run'] == False:
                             break
                         input_ = step.sp500tr_process(input_, utils)
+                    result['conn'].close()
 
-                        sleep(10)
+            case 'vti':
+                result = PreCheck().vti_check(date_start, date_end, utils)
+                if result['keep_run'] == True:
+                    steps = [Crawler(), Parser(), Storer()]
+                    input_ = {'date_start': result['date_start'], 'date_end': result['date_end'], 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
+                    for step in steps:
+                        if input_['keep_run'] == False:
+                            break
+                        input_ = step.vti_process(input_, utils)
+                    result['conn'].close()
+
+            case 'vix':
+                result = PreCheck().vix_check(date_start, date_end, utils)
+                if result['keep_run'] == True:
+                    steps = [Crawler(), Parser(), Storer()]
+                    input_ = {'date_start': result['date_start'], 'date_end': result['date_end'], 'conn': result['conn'], 'c': result['c'], 'keep_run': True}
+                    for step in steps:
+                        if input_['keep_run'] == False:
+                            break
+                        input_ = step.vix_process(input_, utils)
                     result['conn'].close()
 
     @staticmethod

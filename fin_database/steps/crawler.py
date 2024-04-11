@@ -1,8 +1,6 @@
 import requests
 from time import sleep
 import random
-import json
-from bs4 import BeautifulSoup
 from fin_database.steps.step import Step
 from fin_database.settings import random_headers
 
@@ -74,6 +72,7 @@ class Crawler(Step):
         input_['data'] = r
         input_['start_num'] = start_num
         input_['roc_year'] = roc_year
+        input_['roc_month'] = month_
         return input_
 
     def f_report_process(self, input_, utils):
@@ -83,7 +82,8 @@ class Crawler(Step):
             print(f"{input_['season']} {input_['company']} financial report had already download.")
             with open(f_report_path, 'r', encoding='UTF-8') as fr:
                 r = fr.read()
-            if len(r) < 4000:
+                print(len(r))
+            if len(r) < 4900:
                 print('No any finance report')
                 input_['keep_run'] = False
             else:
@@ -100,7 +100,6 @@ class Crawler(Step):
         sleep(10)
 
         try:
-            # print(f'start to request {input_["season"]} {input_["company"]}...')
             r = requests.get(url+'=C', timeout=5, headers=header)
             if len(r.text) == 564:
                 print('查詢過於頻繁！！')
@@ -122,7 +121,12 @@ class Crawler(Step):
             input_['keep_run'] = False
             return input_
 
-        if len(r.text) < 4000:
+        if 4900 > len(r.text) > 4500:
+            print('Need 下載案例文件')
+            input_['keep_run'] = False
+            return input_
+
+        if len(r.text) <= 4500:
             sleep(5)
             print(f'{input_["company"]} in {input_["season"]}無合併財報')
             print(len(r.text))
@@ -143,7 +147,7 @@ class Crawler(Step):
                 input_['keep_run'] = False
                 return input_
 
-            if len(r.text) < 4000:
+            if len(r.text) <= 4500:
                 sleep(5)
                 print(f'{input_["company"]} in {input_["season"]}也無個別財報')
                 try:
@@ -163,7 +167,7 @@ class Crawler(Step):
                     input_['keep_run'] = False
                     return input_
 
-                if len(r.text) < 4000:
+                if len(r.text) <= 4500:
                     print('No any finance report')
                     input_['keep_run'] = False
 
@@ -330,9 +334,7 @@ class Crawler(Step):
     def sp500tr_process(self, input_, utils):
         start_year = input_['date_start'].year
         start_month = input_['date_start'].strftime('%b')
-        print(start_month)
         start_date = input_['date_start'].strftime('%d')
-        print(start_date)
         end_year = input_['date_end'].year
         end_month = input_['date_end'].strftime('%b')
         end_date = input_['date_end'].strftime('%d')
@@ -347,20 +349,100 @@ class Crawler(Step):
         header['cache-control'] = 'no-cache'
         header['Accept-Encoding'] = 'gzip, deflate, br, zstd'
         header['Referer'] = random.choice(['www.google.com', 'https://tw.stock.yahoo.com/markets', 'https://seekingalpha.com/'])
-        # print(header, '\n')
-        r = requests.get(url, timeout=5, headers=header)
-        r = r.text
+        try:
+            r = requests.get(url, timeout=5, headers=header)
+        except requests.exceptions.Timeout as err:
+            print(err)
+            sleep(60)
+            r = requests.get(url, headers=header)
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError')
+            print('try to wait 1 minute and retry...')
+            sleep(60)
+            r = requests.get(url, headers=header)
 
-        print(r)
-        r = json.loads(r)
-        sp500tr = []
-        update_dates =[]
-        for single_date_info in r['data']:
-            sp500tr.append(single_date_info['attributes']['close'])
-            update_dates.append(single_date_info['attributes']['as_of_date'])
+        if r.status_code == requests.codes.ok:
+            input_['data'] = r
+        else:
+            input_['keep_run'] = False
+            print(input_['date_start'], ' to ', input_['date_end'], 'sp500tr request fail')
 
-        print(sp500tr)
-        print(update_dates)
-        input_['keep_run'] = False
+        return input_
+
+    def vti_process(self, input_, utils):
+        start_year = input_['date_start'].year
+        start_month = input_['date_start'].strftime('%b')
+        start_date = input_['date_start'].strftime('%d')
+        end_year = input_['date_end'].year
+        end_month = input_['date_end'].strftime('%b')
+        end_date = input_['date_end'].strftime('%d')
+        header = random.choice(random_headers)
+        url = (f'https://seekingalpha.com/api/v3/historical_prices?filter[ticker][slug]=vti'
+               f'&&filter[as_of_date][gte]=%20{start_month}%20{start_date}%20{start_year}'
+               f'&filter[as_of_date][lte]=%20{end_month}%20{end_date}%20{end_year}&sort=as_of_date')
+
+        header['authority'] = 'seekingalpha.com'
+        header['accept-language'] = 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7'
+        header['accept'] = '*/*'
+        header['cache-control'] = 'no-cache'
+        header['Accept-Encoding'] = 'gzip, deflate, br, zstd'
+        header['Referer'] = random.choice(['www.google.com', 'https://tw.stock.yahoo.com/markets', 'https://seekingalpha.com/'])
+        try:
+            r = requests.get(url, timeout=5, headers=header)
+        except requests.exceptions.Timeout as err:
+            print(err)
+            sleep(60)
+            r = requests.get(url, headers=header)
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError')
+            print('try to wait 1 minute and retry...')
+            sleep(60)
+            r = requests.get(url, headers=header)
+
+        if r.status_code == requests.codes.ok:
+            input_['data'] = r
+        else:
+            input_['keep_run'] = False
+            print(r.status_code)
+            print(input_['date_start'], ' to ', input_['date_end'], 'vti request fail')
+
+        return input_
+
+    def vix_process(self, input_, utils):
+        start_year = input_['date_start'].year
+        start_month = input_['date_start'].strftime('%b')
+        start_date = input_['date_start'].strftime('%d')
+        end_year = input_['date_end'].year
+        end_month = input_['date_end'].strftime('%b')
+        end_date = input_['date_end'].strftime('%d')
+        header = random.choice(random_headers)
+        url = (f'https://seekingalpha.com/api/v3/historical_prices?filter[ticker][slug]=vix'
+               f'&&filter[as_of_date][gte]=%20{start_month}%20{start_date}%20{start_year}'
+               f'&filter[as_of_date][lte]=%20{end_month}%20{end_date}%20{end_year}&sort=as_of_date')
+
+        header['authority'] = 'seekingalpha.com'
+        header['accept-language'] = 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7'
+        header['accept'] = '*/*'
+        header['cache-control'] = 'no-cache'
+        header['Accept-Encoding'] = 'gzip, deflate, br, zstd'
+        header['Referer'] = random.choice(['www.google.com', 'https://tw.stock.yahoo.com/markets', 'https://seekingalpha.com/'])
+        try:
+            r = requests.get(url, timeout=5, headers=header)
+        except requests.exceptions.Timeout as err:
+            print(err)
+            sleep(60)
+            r = requests.get(url, headers=header)
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError')
+            print('try to wait 1 minute and retry...')
+            sleep(60)
+            r = requests.get(url, headers=header)
+
+        if r.status_code == requests.codes.ok:
+            input_['data'] = r
+        else:
+            input_['keep_run'] = False
+            print(r.status_code)
+            print(input_['date_start'], ' to ', input_['date_end'], 'vix request fail')
 
         return input_

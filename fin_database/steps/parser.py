@@ -1,5 +1,6 @@
 from io import StringIO
 from datetime import datetime
+import json
 import pandas as pd
 from bs4 import BeautifulSoup
 from fin_database.steps.step import Step
@@ -40,9 +41,20 @@ class Parser(Step):
         print(f'Parsing revenue of {input_["month"]}...')
         dfs = pd.read_html(StringIO(input_['data'].text))
         new_df = []
-
-        for i in range(input_['start_num'], len(dfs), 2):
-            new_df.append(dfs[i])
+        if (((input_['roc_year'] == 100) and (input_['roc_month'] == 1 or input_['roc_month'] == 2)) or
+                (input_['roc_year'] == 101)):
+            for i in range(input_['start_num'], len(dfs)):
+                # print(i)
+                # print(dfs[i])
+                if i == 0:
+                    continue
+                elif i % 2 == 0:
+                    new_df.append(dfs[i])
+        else:
+            for i in range(input_['start_num'], len(dfs), 2):
+                # print(i)
+                # print(dfs[i])
+                new_df.append(dfs[i])
 
         df = pd.concat(new_df)
         new_label = []
@@ -52,6 +64,7 @@ class Parser(Step):
 
         df.columns = new_label
         if input_['roc_year'] < 102:
+            # print(df)
             df = df.loc[~(df['公司代號'] == '合計')]
         else:
             df = df.loc[~(df['公司代號'] == '合計')].drop('備註', axis=1)
@@ -59,8 +72,9 @@ class Parser(Step):
         df.insert(0, 'update_date', input_['update_date'])
         df.insert(1, '月份', input_['month'])
         df = df.set_index(['update_date', 'stockID'])
+        print(df)
         input_['data'] = df
-        print(df.columns)
+        # print(df.columns)  # test only
         # input_['keep_run'] = False  # test only
         return input_
 
@@ -236,5 +250,54 @@ class Parser(Step):
         df.iloc[:, 0] = df.iloc[:, 0].apply(lambda s: str(int(s.split('/')[0])+1911)+'-'+s.split('/')[1]+'-'+s.split('/')[2])
         df = df.set_index('update_date')
         # print(df)
+        input_['data'] = df
+        return input_
+
+    def sp500tr_process(self, input_, utils):
+        r = input_['data'].text
+        r = json.loads(r)
+        sp500tr = []
+        update_date = []
+        for single_date_info in r['data']:
+            sp500tr.append(single_date_info['attributes']['close'])
+            update_date.append(single_date_info['attributes']['as_of_date'])
+
+        df = pd.DataFrame({'update_date': update_date, 'sp500tr': sp500tr})
+        df = df.set_index('update_date')
+        input_['data'] = df
+        return input_
+
+    def vti_process(self, input_, utils):
+        r = input_['data'].text
+        r = json.loads(r)
+        vti = []
+        update_date = []
+        for single_date_info in r['data']:
+            vti.append(single_date_info['attributes']['close'])
+            update_date.append(single_date_info['attributes']['as_of_date'])
+
+        df = pd.DataFrame({'update_date': update_date, 'vti': vti})
+        df = df.set_index('update_date')
+        input_['data'] = df
+        return input_
+
+    def vix_process(self, input_, utils):
+        r = input_['data'].text
+        r = json.loads(r)
+        vix_open = []
+        vix_high = []
+        vix_low = []
+        vix_close = []
+        update_date = []
+        for single_date_info in r['data']:
+            vix_open.append(single_date_info['attributes']['open'])
+            vix_high.append(single_date_info['attributes']['high'])
+            vix_low.append(single_date_info['attributes']['low'])
+            vix_close.append(single_date_info['attributes']['close'])
+            update_date.append(single_date_info['attributes']['as_of_date'])
+
+        df = pd.DataFrame({'update_date': update_date, 'vix-open': vix_open, 'vix-high': vix_high, 'vix-low': vix_low,
+                           'vix-close': vix_close})
+        df = df.set_index('update_date')
         input_['data'] = df
         return input_
