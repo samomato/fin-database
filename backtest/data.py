@@ -34,7 +34,7 @@ class Data:
 
         else:
             dates_df = self.dates[self.cn2table[cn_name]].loc[:self.date].iloc[-n:]
-            print(dates_df)
+            # print(dates_df)
 
             try:
                 start_date = dates_df.index[-1]
@@ -69,20 +69,11 @@ class Data:
 
 def main():
     data = Data()
-    # print(data.get('成交筆數', 3))
+    data.date = datetime.date(2024, 4, 9)
+    print(data.get('成交筆數', 3))
     # print(data.get('交易多方口數', 3))
     # print(data.get('存貨', 2))
-    research = data.get('研究發展費用', 1)
-    con1 = research.iloc[-1]>1000000
-    print(con1)
-    instock = data.get('存貨增加減少', 1)
-    con2 = instock.iloc[-1] < 0
-    print(con2)
-    con = con1 & con2
-    print(con)
-    print(con[con])
-    # print(data.cn2table)
-    # print(data.get('light_score', 13))
+
 
 
 if __name__ == '__main__':
