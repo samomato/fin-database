@@ -150,4 +150,4 @@ def backtest(start_date, end_date, holding_days, data, strategy, stop_loss=None,
 if __name__ == '__main__':
     data = Data()
     # backtest(date(2022, 3, 1), date(2023, 12, 31), 90, data, test_strategy)
-    backtest(date(2020, 3, 11), date(2024, 4, 9), 60, data, top_small_strategy, weight='average')
+    backtest(date(2018, 3, 11), date(2024, 4, 9), 60, data, top_small_strategy, weight='average')

@@ -6,43 +6,6 @@ from backtest.data import Data
 data = Data()
 data.date = datetime.date(2024,4,10)
 # # 股本 share capital
-# sc = data.get('股本合計', 1)
-# # print('sc', sc)
-# # 拿365天的股價
-# close = data.get('收盤價', 400)
-# open = data.get('開盤價', 365)
-# high = data.get('最高價', 365)
-# low = data.get('最低價', 365)
-
-# # conditions:
-# # 1. 市值 Market cap： 股本(x 1000 證交所單位為千元)/面額 * 股價
-# # 面額： 6415 矽力:2.5  ; 6548 長科: 0.4 ; 6531 愛普: 5
-# sc = sc.iloc[-1]
-# mc = sc * 1000 / 10 * close.iloc[-1]
-# mc['6531'] = mc['6531'] * (10 / 5)
-# mc = mc.dropna()
-# con1 = mc < 1e10
-
-
-# 2. 股價淨值比 = 股價/每股淨值 ;  每股淨值 = 股東權益/流通股數; 流通股數 = 股本/面額
-# 股價淨值比 = 股價/(股東權益/(股本/面額)) = 股價/ (股東權益/股本) / 面額
-# def pb_ratios(n, _data):  # 最近n季
-#     歸屬業主權益 = _data.get('歸屬於母公司業主之權益合計', n)
-#     權益總計 = _data.get('權益總計', n)
-#     權益總額 = _data.get('權益總額', n)
-#     _sc = _data.get('股本合計', n)
-#     歸屬業主權益.fillna(權益總計, inplace=True)
-#     歸屬業主權益.fillna(權益總額, inplace=True)
-#     _close = _data.get('收盤價', 100*n)
-#     _pb_ratio = _close.reindex(_sc.index, method='ffill') / (歸屬業主權益 / sc) / 10
-#     _pb_ratio['6531'] = _pb_ratio['6531']*2
-#     return _pb_ratio
-#
-#
-# pb_ratio = pb_ratios(1, data)
-# con2 = pb_ratio.iloc[-1] < 0.7
-
-
 
 
 def top_small_strategy(data):
@@ -64,7 +27,7 @@ def top_small_strategy(data):
     # pb_ratio = close.reindex(sc.index, method='ffill') / (歸屬業主權益 / sc) / 10
     pb_ratio = close.iloc[-1] / (歸屬業主權益 / sc) / 10  # 用最近的股價去算pb ratio 較不失真 比免股票這段期間暴漲
     pb_ratio['6531'] = pb_ratio['6531']*2
-    con2 = pb_ratio.iloc[-1] < 2
+    con2 = pb_ratio.iloc[-1] < 2.1
 # ------------------------------------------------------------------------------------------------------------------
     # condition 3. 自由現金流 net cash flow
     def toSeasonal(df):
@@ -96,8 +59,35 @@ def top_small_strategy(data):
     con3 = net_flow > threshold
     # con = net_flow <= threshold
 # ------------------------------------------------------------------------------------------------------------------
+    # condition 4. 市值營收比 Price-to-Sales Ratio PSR
+    當月營收 = data.get('當月營收', 4) * 1000
+    當季營收 = 當月營收.iloc[-4:].sum()  # 取近4個月營收總和，當作一季的月營收（4也可以改變）
+    市值營收比 = cap / 當季營收
+    con4 = 市值營收比 < 3
 
-    con = con1 & con2 &con3
+# ------------------------------------------------------------------------------------------------------------------
+    # condition 5.
+
+# ------------------------------------------------------------------------------------------------------------------
+#    # condition 9. 營業利益成長率  (比去年營利好，表示體質變好)
+#     營業利益 = data.get('營業利益損失', 5)
+#     營業利益成長率 = (營業利益.iloc[-1] / 營業利益.iloc[-5] - 1) * 100
+#     con9 = 營業利益成長率 > 50
+#     # 實測結果幫助不大
+# ------------------------------------------------------------------------------------------------------------------
+#     # condition 10. 股東權益報酬率 ROE (用多少錢賺多少錢)
+#     稅後淨利 = data.get('本期淨利淨損', 1)
+#     權益總計 = data.get('權益總計', 1)
+#     權益總額 = data.get('權益總額', 1)
+#     權益總計.fillna(權益總額, inplace=True)
+#     ROE = 稅後淨利.iloc[-1] / 權益總計.iloc[-1]
+#
+#     con10 = ROE > 0.05
+#     # 實測結果沒幫助
+# ------------------------------------------------------------------------------------------------------------------
+
+    con = con5
+    # con = con1 & con2 & con3 & con4 & con5
     return con[con]
 
 
