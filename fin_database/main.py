@@ -3,8 +3,8 @@ from fin_database.pipeline import Pipeline
 
 
 def main():
-    date_start = date(2016, 7, 15)
-    date_end = date(2019, 3, 1)
+    date_start = date(2013, 1, 1)
+    date_end = date(2024, 4, 10)
     # dtype = 'daily'
     # dtype = 'month'
     dtype = 'f_report'

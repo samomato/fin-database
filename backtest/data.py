@@ -52,7 +52,7 @@ class Data:
                 WHERE update_date BETWEEN '{end_str}' AND '{start_str}'""")
                 take = pd.read_sql(s, self.conn, parse_dates=['update_date']).pivot(index='update_date', columns=('product', '法人'))[cn_name]
 
-            elif self.cn2table[cn_name] in {'BALANCE', 'CASH_FLOW', 'INCOME', 'DAILY'}:
+            elif self.cn2table[cn_name] in {'BALANCE', 'CASH_FLOW', 'INCOME', 'MONTH_REVENUE', 'DAILY'}:
 
                 s = (f"""SELECT stockID, update_date, {cn_name} FROM {self.cn2table[cn_name]} 
                 WHERE update_date BETWEEN '{end_str}' AND '{start_str}'""")

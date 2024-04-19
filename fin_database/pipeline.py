@@ -49,7 +49,7 @@ class Pipeline:
                         seed = self.f_report_seed_generator(season, date_, utils)
                         seed = self.company_need_process(season, seed, result['c'])
                         # print(season, '\n', date_)
-                        # seed = ['3454']  # for test only
+                        # seed = ['6139']  # for test only
                         for company in seed:
 
                             input_ = {'season': season, 'update_date': date_, 'company': company,

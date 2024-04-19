@@ -89,7 +89,7 @@ class Crawler(Step):
             else:
                 input_['data'] = r
                 input_['path'] = f_report_path
-            sleep(0.1)
+
             return input_
 
         year, season = input_['season'].split('-')
@@ -97,32 +97,34 @@ class Crawler(Step):
             &SSEASON={season}&REPORT_ID'''
         header = random.choice(random_headers)
         print(f"crawling {input_['season']} {input_['company']} financial report data...")
-        sleep(10)
+        sleep(5)
 
         try:
             r = requests.get(url+'=C', timeout=5, headers=header)
+            print(len(r.text))
             if len(r.text) == 564:
                 print('查詢過於頻繁！！')
-                sleep(60)
+                sleep(30)
                 header = random.choice(random_headers)
                 r = requests.get(url + '=C', timeout=5, headers=header)
+
+            elif 4900 > len(r.text) > 4500:
+                print('Need 下載案例文件')
+                input_['keep_run'] = False
+                return input_
+
         except requests.exceptions.Timeout as err:
             print(err)
-            sleep(60)
+            sleep(30)
             r = requests.get(url+'=C')
         except requests.exceptions.ConnectionError:
             print('ConnectionError')
             print('try to wait 1 minute and retry...')
-            sleep(60)
+            sleep(30)
             r = requests.get(url+'=C', headers=header)
         except Exception as e:
             print(e)
             print(f"other exception for {input_['season']} {input_['company']}, please check")
-            input_['keep_run'] = False
-            return input_
-
-        if 4900 > len(r.text) > 4500:
-            print('Need 下載案例文件')
             input_['keep_run'] = False
             return input_
 
@@ -134,12 +136,12 @@ class Crawler(Step):
                 r = requests.get(url+'=A', timeout=5, headers=header)
             except requests.exceptions.Timeout as err:
                 print(err)
-                sleep(60)
+                sleep(30)
                 r = requests.get(url + '=A', headers=header)
             except requests.exceptions.ConnectionError:
                 print('ConnectionError')
                 print('try to wait 1 minute and retry...')
-                sleep(60)
+                sleep(30)
                 r = requests.get(url + '=A', headers=header)
             except Exception as e:
                 print(e)
@@ -154,12 +156,12 @@ class Crawler(Step):
                     r = requests.get(url + '=B', timeout=5, headers=header)
                 except requests.exceptions.Timeout as err:
                     print(err)
-                    sleep(60)
+                    sleep(30)
                     r = requests.get(url + '=B', headers=header)
                 except requests.exceptions.ConnectionError:
                     print('ConnectionError')
                     print('try to wait 1 minute and retry...')
-                    sleep(60)
+                    sleep(30)
                     r = requests.get(url + '=B', headers=header)
                 except Exception as e:
                     print(e)

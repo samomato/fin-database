@@ -18,3 +18,7 @@ def test_strategy(data):
     # 當天股本 = 股本.iloc[-1]
     # 市值 = 當天股本 * 1000 / 10 * 當天股價
     #print(price)
+
+
+
+
