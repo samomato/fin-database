@@ -27,7 +27,7 @@ def top_small_strategy(data):
     # pb_ratio = close.reindex(sc.index, method='ffill') / (歸屬業主權益 / sc) / 10
     pb_ratio = close.iloc[-1] / (歸屬業主權益 / sc) / 10  # 用最近的股價去算pb ratio 較不失真 比免股票這段期間暴漲
     pb_ratio['6531'] = pb_ratio['6531']*2
-    con2 = pb_ratio.iloc[-1] < 2.1
+    con2 = pb_ratio.iloc[-1] < 1.5
 # ------------------------------------------------------------------------------------------------------------------
     # condition 3. 自由現金流 net cash flow
     def toSeasonal(df):
@@ -66,7 +66,14 @@ def top_small_strategy(data):
     con4 = 市值營收比 < 3
 
 # ------------------------------------------------------------------------------------------------------------------
-    # condition 5.
+    # condition 5. RSV
+    days = 90
+    rsv = (close.iloc[-1] - close.iloc[-days:].min()) / (close.iloc[-days:].max() - close.iloc[-days:].min())
+    con5 = rsv > 0.6
+# ------------------------------------------------------------------------------------------------------------------
+    # condition 6. Trade Value
+    value = data.get('成交金額', 60) * 1000
+    con6 = (value.iloc[-5:].mean()) > 1e7  # 近5天平均每日成交金額>1000萬
 
 # ------------------------------------------------------------------------------------------------------------------
 #    # condition 9. 營業利益成長率  (比去年營利好，表示體質變好)
@@ -86,9 +93,18 @@ def top_small_strategy(data):
 #     # 實測結果沒幫助
 # ------------------------------------------------------------------------------------------------------------------
 
-    con = con5
-    # con = con1 & con2 & con3 & con4 & con5
-    return con[con]
+    # con = con1 & con2 & con3 & con4
+    con = con1 & con2 & con3 & con4 & con5
 
+    # if len(con[con]) > 80:
+    #     con5 = rsv > 0.95
+    # elif len(con[con]) > 50:
+    #     con5 = rsv > 0.8
+    # elif len(con[con]) > 20:
+    #     con5 = rsv > 0.6
+
+    # con = con1 & con2 & con3 & con4 & con5
+
+    return con[con]
 
 print(top_small_strategy(data))

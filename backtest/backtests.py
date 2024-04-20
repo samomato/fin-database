@@ -136,6 +136,7 @@ def backtest(start_date, end_date, holding_days, data, strategy, stop_loss=None,
     ((benchmark / benchmark[0] - 1) * 100).plot(color=(0.8, 0.8, 0.8))
     plt.ylabel('Return On Investment (%)')
     plt.grid(linestyle='-.')
+    plt.title('TOP SMALL STRATEGY BACKTEST')
     plt.show()
     # ((benchmark/benchmark.cummax()-1)*100).plot(legend=True, color=(0.8, 0.8, 0.8))
     # ((equality/equality.cummax()-1)*100).plot(legend=True)
