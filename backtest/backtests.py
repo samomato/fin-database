@@ -138,17 +138,50 @@ def backtest(start_date, end_date, holding_days, data, strategy, stop_loss=None,
     plt.grid(linestyle='-.')
     plt.title('TOP SMALL STRATEGY BACKTEST')
     plt.show()
-    # ((benchmark/benchmark.cummax()-1)*100).plot(legend=True, color=(0.8, 0.8, 0.8))
-    # ((equality/equality.cummax()-1)*100).plot(legend=True)
-    # plt.ylabel('Dropdown (%)')
-    # plt.grid(linestyle='-.')
-    # plt.show()
-    # pd.Series(nstock).plot.bar()
-    # plt.ylabel('Number of stocks held')
+    ((benchmark/benchmark.cummax()-1)*100).plot(legend=True, color=(0.8, 0.8, 0.8))
+    ((equality/equality.cummax()-1)*100).plot(legend=True)
+    plt.ylabel('Dropdown (%)')
+    plt.grid(linestyle='-.')
+    plt.show()
+    pd.Series(nstock).plot.bar()
+    plt.ylabel('Number of stocks held')
     return equality, transections
+
+
+def hold_days(start_year, end_year):
+    years = []
+    for i in range(end_year - start_year + 1):
+        years.append(start_year + i)
+    months = [[3, 31], [5, 15], [8, 14], [11, 14]]
+    hold_list = []
+    for y in years:
+        if y > datetime.date.today().year:
+            break
+        for m in months:
+            if (y == datetime.date.today().year) and (m[0] >= datetime.date.today().month):
+                break
+            hold_list.append(datetime.date(y, m[0], m[1]))
+    return hold_list
+
+
+def hold_months(start_date, end_date, months=2):
+    hold_days = [start_date]
+    sy = start_date.year
+    sm = start_date.month
+    sd = start_date.day
+    while (sy < date.today().year) or (sy == date.today().year and sm < date.today().month):
+        sm += months
+        if sm >= 13:
+            sy += 1
+            sm = sm-12
+        if end_date > date(sy, sm, sd):
+            hold_days.append(datetime.date(sy, sm, sd))
+    return hold_days
 
 
 if __name__ == '__main__':
     data = Data()
+    hold_days = hold_months(date(2015, 3, 11), date(2024, 4, 11), 2)
+    # hold_days = hold_60days()
     # backtest(date(2022, 3, 1), date(2023, 12, 31), 90, data, test_strategy)
-    backtest(date(2018, 3, 11), date(2024, 4, 9), 60, data, top_small_strategy, weight='average')
+    backtest(date(2015, 3, 11), date(2024, 4, 12), hold_days, data, top_small_strategy, weight='average')
