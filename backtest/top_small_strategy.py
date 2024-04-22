@@ -78,8 +78,8 @@ def top_small_strategy(data):
     rsv = (close.iloc[-1] - close.iloc[-days:].min()) / (close.iloc[-days:].max() - close.iloc[-days:].min())
 
 # ------------------------------------------------------------------------------------------------------------------
-    # rade Value
-    value = data.get('成交金額', 60) * 1000
+    # trade Value
+    value = data.get('成交金額', 60)
 
 # ------------------------------------------------------------------------------------------------------------------
    # 營業利益成長率  (比去年營利好，表示體質變好)
@@ -100,34 +100,38 @@ def top_small_strategy(data):
     # 月營收
     rev = data.get('當月營收', 13)
 
-
-    # 幫助有限
-    # ------------------------------------------------------------------------------------------------------------------
-    con1 = cap <= 2e9  # 3e9, 公司數：168~264, 360%
+    # ------------------------------------------以下設定條件參數------------------------------------------------------
+    con1 = cap <= 8e9  # 3e9, 公司數：168~264, 360%
     con2 = rev[-3:].mean() > rev.mean()  # 公司數： 209~707, 290% "2"
     con3 = net_flow > threshold  # 0, 公司數：422~640, 160%  "3"
-    con4 = rsv > 0.2  # 0.7, 公司數：93~795, 220%  "4" 效果好但選出股數受大盤影響劇烈
-    con5 = 市值營收比 < 3.5  # 2.2 , 公司數：158~295, 310% "4"  會跟con1重疊 效果不佳
+    con4 = 市值營收比 < 3  # 2.2 , 公司數：158~295, 310% "4"
+    con5 = rsv > 0.1  # 0.7, 公司數：93~795, 220%  "5" 效果好但選出股數受大盤影響劇烈
     con6 = (value.iloc[-5:].mean()) > 1e7  # 2e11, 公司數：89~301, 150%
-    #
-    # con7 = ROE > 0.01  # 0.05, 公司數： 120~644, 120%  "6" 對小市值公司影響微小
-    # con8 = 營業利益成長率 > 25  # 30, 公司數： 175~361, 200%  對小市值公司完全沒用
-    # con9 = pb_ratio.iloc[-1] < 1.4  # 1, 公司數：149~324, 200%  對小市值公司完全沒用
 
-    # con = con1 & con4 & con5 & con6 & con7 & con3 & con9
-    con = con1 & con2 & con3 & con4 & con6
+    # con7 = ROE > 0  # 0.05, 公司數： 120~644, 120%  "6" 對小市值公司影響微小
+    # con8 = 營業利益成長率 > 0  # 30, 公司數： 175~361, 200%  對小市值公司完全沒用
+    # con9 = pb_ratio.iloc[-1] < 2.1  # 1, 公司數：149~324, 200%  對小市值公司完全沒用
+
+    con = con1 & con2 & con3 & con4 & con5 & con6
     stocks = len(con[con])
-    if stocks > 8:
-        gain = 1
-        rsv_threshold = 0.2*(stocks/8) * gain
-        print(rsv_threshold)
-        if rsv_threshold > 0.85:
-            rsv_threshold = 0.85
-        con4 = rsv > rsv_threshold
-        con = con1 & con2 & con3 & con4 & con6
-        # if len(con[con]) > 12:
-        #     con = con1 & con2 & con3 & con4 & con5
+    if stocks > 12:
+        rsv_threshold = 0.1 + 0.16 * (stocks/12)
+        psr_threshold = 3 - 0.22 * (stocks/12)
+        value_threshold = 1e7 + 3e6 * (stocks/12)
+
+
+        if rsv_threshold > 0.96:
+            rsv_threshold = 0.96
+
+        con4 = 市值營收比 < psr_threshold
+        con5 = rsv > rsv_threshold
+        con6 = value.iloc[-5:].mean() > value_threshold
+
+        con = con1 & con2 & con3 & con4 & con5 & con6
 
     return con[con]
 
-# print(top_small_strategy(data))
+if __name__ == '__main__':
+    data = Data()
+    data.date = datetime.date(2024,4, 11)
+    print(top_small_strategy(data))

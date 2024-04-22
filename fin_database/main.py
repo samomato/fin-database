@@ -3,11 +3,11 @@ from fin_database.pipeline import Pipeline
 
 
 def main():
-    date_start = date(2013, 1, 1)
-    date_end = date(2024, 4, 10)
-    # dtype = 'daily'
+    date_start = date(2024, 4, 10)
+    date_end = date(2024, 4, 19)
+    dtype = 'daily'
     # dtype = 'month'
-    dtype = 'f_report'
+    # dtype = 'f_report'
     # dtype = 'futures'
     # dtype = 'taiex'
     # dtype = 'taiex_tr'
